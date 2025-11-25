@@ -17,13 +17,13 @@ Interactive Streamlit application for antibody sequencing workflows. The Sequenc
 
 ## 1. Prerequisites
 
-| Requirement                     | Notes                                                                                                |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| macOS / Linux with Python 3.12+ | Project is tested on macOS Sonoma + Python 3.13 via venv.                                            |
-| Requirements file               | `pip install -r requirements.txt` pulls AbNatiV, ANARCI, and runtime deps.                           |
-| Xcode CLT / build tools         | Needed to compile portions of ANARCI on Apple Silicon.                                               |
-| HMMER 3.3+, wget, curl          | Used by the ANARCI build pipeline to download germlines/HMMs. Install via `brew install hmmer wget`. |
-| Conda or pip                    | We use a `python -m venv` virtualenv, but a conda env works too.                                     |
+| Requirement                     | Notes                                                                                                                                                    |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| macOS / Linux with Python 3.12+ | Project is tested on macOS Sonoma + Python 3.13 via venv.                                                                                                |
+| Requirements file               | `pip install -r requirements.txt` installs Streamlit, AbNatiV, pdbfixer, etc. Install ANARCI separately via `python scripts/install_vendored_anarci.py`. |
+| Xcode CLT / build tools         | Needed to compile portions of ANARCI on Apple Silicon.                                                                                                   |
+| HMMER 3.3+, wget, curl          | Used by the ANARCI build pipeline to download germlines/HMMs. Install via `brew install hmmer wget`.                                                     |
+| Conda or pip                    | We use a `python -m venv` virtualenv, but a conda env works too.                                                                                         |
 
 ### Optional (GPU / structure workflows)
 
@@ -47,11 +47,21 @@ python -m pip install --upgrade pip setuptools wheel
 
 ### Install dependencies
 
-Install everything (Streamlit UI, AbNatiV, ANARCI, pdbfixer, etc.) from the provided requirements file:
+Install everything (Streamlit UI, AbNatiV, pdbfixer, etc.) from the provided requirements file:
 
 ```bash
 pip install -r requirements.txt
 ```
+
+### Install the vendored ANARCI wheel
+
+We removed ANARCI from `requirements.txt` to keep Hugging Face builds deterministic. Install the vendored wheel locally via the helper script:
+
+```bash
+python scripts/install_vendored_anarci.py
+```
+
+Re-run the script with `--force` if you need to reinstall the package into a fresh virtual environment.
 
 ## 4. Initialize AbNatiV cache
 
@@ -105,7 +115,7 @@ use_tls = true
 
 1. **Prepare the repo**
 
-   - Commit the provided `requirements.txt` (installs Streamlit, AbNatiV, ANARCI, pdbfixer, etc.) and the `postBuild` script.
+   - Commit the provided `requirements.txt` (installs Streamlit, AbNatiV, pdbfixer, etc.) and the `postBuild` script (which decodes and installs the vendored ANARCI wheel).
    - Keep `external/` empty in Git—the Space will install AbNatiV/ANARCI from pip instead of pulling vendored sources.
    - Verify `abnativ init` succeeds locally so you know the package download works on your platform.
 
