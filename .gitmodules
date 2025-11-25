@@ -1,0 +1,6 @@
+[submodule "external/ANARCI"]
+	path = external/ANARCI
+	url = https://github.com/oxpig/ANARCI
+[submodule "external/AbNatiV"]
+	path = external/AbNatiV
+	url = https://gitlab.developers.cam.ac.uk/ch/sormanni/abnativ.git

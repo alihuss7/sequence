@@ -26,6 +26,8 @@ Thumbs.db
 # Local data
 pipfreeze/
 
-# Vendored sources fetched at build time
+# Vendored sources fetched at build time (allow tracked submodules)
 external/*
 !external/.gitkeep
+!external/ANARCI
+!external/AbNatiV

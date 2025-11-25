@@ -17,14 +17,14 @@ Interactive Streamlit application for antibody sequencing workflows. The Sequenc
 
 ## 1. Prerequisites
 
-| Requirement                     | Notes                                                                                                                |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| macOS / Linux with Python 3.12+ | Project is tested on macOS Sonoma + Python 3.13 via venv.                                                            |
-| Requirements file               | `pip install -r requirements.txt` installs Streamlit, AbNatiV, pdbfixer, torch, etc.                                 |
-| Git submodules                  | Run `git submodule update --init external/ANARCI` to populate the ANARCI source tree before installing dependencies. |
-| Xcode CLT / build tools         | Needed to compile portions of ANARCI on Apple Silicon.                                                               |
-| HMMER 3.3+, wget, curl          | Used by the ANARCI build pipeline to download germlines/HMMs. Install via `brew install hmmer wget`.                 |
-| Conda or pip                    | We use a `python -m venv` virtualenv, but a conda env works too.                                                     |
+| Requirement                       | Notes                                                                                                                                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| macOS / Linux with Python 3.12+   | Project is tested on macOS Sonoma + Python 3.13 via venv.                                                                                                    |
+| Requirements file                 | `pip install -r requirements.txt` installs the Streamlit UI + core dependencies. Install ANARCI + AbNatiV separately via `scripts/install_external_deps.py`. |
+| Git submodules                    | Run `git submodule update --init external/ANARCI external/AbNatiV` to populate both source trees before installing dependencies.                             |
+| Xcode CLT / build tools           | Needed to compile portions of ANARCI on Apple Silicon.                                                                                                       |
+| HMMER 3.3+, MUSCLE 5+, wget, curl | Used by the ANARCI build pipeline to download germlines/HMMs. Install via `brew install hmmer brewsci/bio/muscle wget`.                                      |
+| Conda or pip                      | We use a `python -m venv` virtualenv, but a conda env works too.                                                                                             |
 
 ### Optional (GPU / structure workflows)
 
@@ -48,33 +48,54 @@ python -m pip install --upgrade pip setuptools wheel
 
 ### Install dependencies
 
-Install everything (Streamlit UI, AbNatiV, pdbfixer, etc.) from the provided requirements file:
+Install everything (Streamlit UI, pdbfixer, etc.) from the provided requirements file:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Install external ANARCI
+### Install external ANARCI + AbNatiV
 
-Clone the upstream repository as a submodule (one-time):
+Clone the upstream repositories as submodules (one-time):
 
 ```bash
-git submodule update --init external/ANARCI
+git submodule update --init external/ANARCI external/AbNatiV
 ```
 
-Then install the package from source using the helper script:
+Then install both packages from source using the helper script:
 
 ```bash
 python scripts/install_external_deps.py
 ```
 
+### Populate ANARCI germlines / HMMs
+
+The upstream ANARCI repository does **not** commit IMGT germlines, so the editable install from `external/ANARCI` will fail with `ModuleNotFoundError: anarci.germlines` until you build the assets locally. Run the pipeline once on every fresh checkout:
+
+```bash
+# assumes the virtualenv lives in .venv; update PATH if you use conda
+REPO=/path/to/sequence
+cd "$REPO"/external/ANARCI/build_pipeline
+PATH="$REPO/.venv/bin:$PATH" bash RUN_pipeline.sh
+
+# copy the generated files into the package that pip installs in editable mode
+cd "$REPO"  # repo root
+cp external/ANARCI/build_pipeline/curated_alignments/germlines.py external/ANARCI/lib/python/anarci/
+mkdir -p external/ANARCI/lib/python/anarci/dat
+cp -R external/ANARCI/build_pipeline/HMMs external/ANARCI/lib/python/anarci/dat/
+```
+
+The script depends on MUSCLE, HMMER, wget, and curl; on macOS install them via Homebrew (`brew install brewsci/bio/muscle hmmer wget curl`). Once the files exist under `external/ANARCI/lib/python/anarci/`, re-run `python scripts/install_external_deps.py` to refresh the editable install inside your environment.
+
+````
+
 ## 4. Initialize AbNatiV cache
 
-The PyPI `abnativ` package ships the CLI and Python helpers we use in `services/abnativ_client.py`. After installing requirements, download the pretrained checkpoints once per user:
+The `external/AbNatiV` checkout provides the CLI and Python helpers we use in `services/abnativ_client.py`. After installing requirements + external dependencies, download the pretrained checkpoints once per user:
 
 ```bash
 abnativ init  # stores weights in ~/.abnativ by default
-```
+````
 
 > **Note for Apple Silicon**: the published `anarci` wheel now bundles its HMM assets. If you still encounter missing `ALL.hmm` errors, reinstall ANARCI (`pip install --force-reinstall anarci`) or follow the upstream instructions to rebuild HMMs with `hmmer`.
 
@@ -120,7 +141,7 @@ use_tls = true
 
 1. **Prepare the repo**
 
-   - Commit the provided `requirements.txt` (installs Streamlit, AbNatiV, pdbfixer, etc.) and the `postBuild` script (which installs ANARCI from the `external/` submodule and runs `abnativ init`).
+   - Commit the provided `requirements.txt` (installs Streamlit, pdbfixer, etc.) and the `postBuild` script (which installs ANARCI/AbNatiV from `external/` submodules and runs `abnativ init`).
    - Verify `abnativ init` succeeds locally so you know the package download works on your platform.
 
 2. **Create the Space**

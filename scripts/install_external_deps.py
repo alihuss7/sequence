@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Install ANARCI from the local ``external/ANARCI`` submodule.
+"""Install ANARCI/AbNatiV from local submodules under ``external/``.
 
-This replaces the previous vendored-wheel flow by assuming the upstream ANARCI
-repository is checked out as a git submodule under ``external/ANARCI``. The
-helper shells out to pip with ``-e`` so edits to the submodule are reflected
-immediately in the active environment.
+This replaces the previous vendored-wheel flow by assuming the upstream
+repositories are checked out as git submodules under ``external/ANARCI`` and
+``external/AbNatiV``. The helper shells out to pip with ``-e`` so edits to the
+submodules are reflected immediately in the active environment.
 """
 from __future__ import annotations
 
@@ -34,7 +34,10 @@ class ExternalDependency:
         subprocess.check_call(cmd)
 
 
-DEPENDENCIES = (ExternalDependency("ANARCI", REPO_ROOT / "external" / "ANARCI"),)
+DEPENDENCIES = (
+    ExternalDependency("ANARCI", REPO_ROOT / "external" / "ANARCI"),
+    ExternalDependency("AbNatiV", REPO_ROOT / "external" / "AbNatiV"),
+)
 
 
 def main() -> int:
@@ -50,7 +53,7 @@ def main() -> int:
         if not dep.path.exists():
             message = (
                 f"[external-install] Expected directory {dep.path} was not found. "
-                "Did you run 'git submodule update --init external/ANARCI'?"
+                "Did you run 'git submodule update --init external/ANARCI external/AbNatiV'?"
             )
             if args.allow_missing:
                 print(f"WARNING: {message}")

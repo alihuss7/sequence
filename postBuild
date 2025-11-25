@@ -7,13 +7,31 @@ log() {
 	echo "[postBuild] $1"
 }
 
+log "Syncing git submodules"
+git -C "$PROJECT_ROOT" submodule update --init --depth 1 external/ANARCI external/AbNatiV
+
 PYTHON_BIN="$(command -v python)"
 if [ -z "$PYTHON_BIN" ]; then
 	log "Unable to locate python executable"
 	exit 1
 fi
 
-log "Installing external ANARCI from submodule"
+PYTHON_DIR="$(dirname "$PYTHON_BIN")"
+
+log "Building ANARCI germlines/HMMs"
+pushd "$PROJECT_ROOT/external/ANARCI/build_pipeline" >/dev/null
+PATH="$PYTHON_DIR:$PATH" bash RUN_pipeline.sh
+popd >/dev/null
+
+log "Copying ANARCI assets into editable package"
+cp "$PROJECT_ROOT/external/ANARCI/build_pipeline/curated_alignments/germlines.py" \
+	"$PROJECT_ROOT/external/ANARCI/lib/python/anarci/"
+mkdir -p "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat"
+rm -rf "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/HMMs"
+cp -R "$PROJECT_ROOT/external/ANARCI/build_pipeline/HMMs" \
+	"$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/"
+
+log "Installing external ANARCI / AbNatiV from submodules"
 "$PYTHON_BIN" "$PROJECT_ROOT/scripts/install_external_deps.py"
 
 prepare_and_init() {
@@ -32,9 +50,7 @@ prepare_and_init() {
 	chown -R "$username:$username" "$home_dir" || true
 
 	log "Running abnativ init as $username"
-	if ! su "$username" -c "HOME=$home_dir ABNATIV_HOME=$abnativ_home \"$PYTHON_BIN\" -m abnativ.__main__ init --yes"; then
-		su "$username" -c "HOME=$home_dir ABNATIV_HOME=$abnativ_home \"$PYTHON_BIN\" -m abnativ.__main__ init"
-	fi
+	su "$username" -c "HOME=$home_dir ABNATIV_HOME=$abnativ_home \"$PYTHON_BIN\" -m abnativ.__main__ init"
 
 	log "Listing cached files for $username"
 	su "$username" -c "ls -R $abnativ_home || true"
