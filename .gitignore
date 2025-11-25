@@ -25,6 +25,7 @@ Thumbs.db
 
 # Local data
 pipfreeze/
+.tools/
 
 # Vendored sources fetched at build time (allow tracked submodules)
 external/*

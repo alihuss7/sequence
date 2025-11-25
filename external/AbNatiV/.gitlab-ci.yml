@@ -1,0 +1,66 @@
+.default: &default
+  tags:
+    - circe
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "ow/package"
+
+
+stages:
+  - build
+  - release
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+build:wheel:
+  <<: *default
+  stage: build
+  image: python:3.8
+  when: manual
+  before_script:
+    - pip install poetry
+  script:
+    - poetry build
+  artifacts:
+    paths:
+      - dist/*.whl
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip/
+
+release:wheel_dry_run:
+  <<: *default
+  stage: release
+  image: python:3.8
+  when: manual
+  before_script:
+    - pip install poetry
+    - poetry build
+    - poetry config repositories.gitlab https://gitlab.developers.cam.ac.uk/api/v4/projects/$CI_PROJECT_ID/packages/pypi
+  script:
+    - poetry publish --repository gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --dry-run
+    - poetry publish --username __token__ --password $PYPI_KEY --dry-run
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip/
+
+release:wheel:
+  <<: *default
+  stage: release
+  image: python:3.8
+  needs:
+    - job: build:wheel
+      artifacts: true
+  before_script:
+    - pip install poetry
+    - poetry config repositories.gitlab https://gitlab.developers.cam.ac.uk/api/v4/projects/$CI_PROJECT_ID/packages/pypi
+  script:
+    - poetry publish --repository gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN
+    - poetry publish --username __token__ --password $PYPI_KEY
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip/

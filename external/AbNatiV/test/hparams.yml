@@ -1,0 +1,19 @@
+alphabet_size: 21
+batch_size: 128
+commitment_cost: 2 # In the loss function
+d_embedding: 768 # assert d_embedding % num_heads == 0
+d_ff: 128 # Hidden layer dimension of point wise feed forward network
+decay: 0.90 # This is only used for EMA updates.
+drop: 0
+embedding_dim_code_book: 64
+kernel: 8
+learning_rate: 4.0e-05
+length_seq: 149
+limit_val_batches: 400
+max_epochs: 15
+num_embeddings: 512
+num_heads: 8
+num_mha_layers: 3
+perc_masked_residues: 0.15
+run_name: 'abnativ_v1'
+stride: 8

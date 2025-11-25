@@ -1,0 +1,36 @@
+name: abnativ
+channels:
+  - nodefaults
+  - bioconda
+  - conda-forge
+  - pytorch
+dependencies:
+  - python>=3.8
+  - anarci 
+  - hmmer 
+  - pdbfixer
+  - pip
+  - pip:
+    - biopython
+    - brewer2mpl
+    - chroma
+    - einops
+    - freesasa
+    - immunebuilder
+    - matplotlib
+    - mlflow
+    - numpy
+    - pandas
+    - paretoset
+    - pytorch-lightning 
+    - PyYAML
+    - torch 
+    - python-parallel
+    - protein-topmodel
+    - scipy
+    - seaborn
+    - tqdm
+    - wandb
+
+
+

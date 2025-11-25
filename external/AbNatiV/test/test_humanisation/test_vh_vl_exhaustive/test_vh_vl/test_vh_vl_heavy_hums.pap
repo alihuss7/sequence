@@ -1,0 +1,27 @@
+                           0
+test_vh_vl_heavy_w QVQLVQS-GPELVKPGASLKLSCTASG-FNIKD-----TYIHWVKQAPGQGLEWIGRIYPT---N
+test_vh_vl_heavy_7 QVQLVQS-GPELVKPGASLKLSCTASG-FNIKD-----TYIHWVKQAPGQGLEWIGRIYPT---N
+test_vh_vl_heavy_0 QVQLVQS-GPELVKPGASLKLSCTASG-FNIKD-----TYIHWVKQAPGQGLEWIGRIYPT---N
+test_vh_vl_heavy_2 QVQLVQS-GPELVKPGASLKLSCTASG-FNIKD-----TYIHWVKQAPGQGLEWIGRIYPT---N
+test_vh_vl_heavy_3 QVQLVQS-GPELVKPGQSLKLSCTASG-FNIKD-----TYIHWVKQAPGQGLEWIGRIYPT---N
+test_vh_vl_heavy_4 QVQLVQS-GPELVKPGQSLKLSCTASG-FNIKD-----TYIHWVKQAPGQGLEWIGRIYPT---N
+_consensus         **************** ************************************************
+
+                          65
+test_vh_vl_heavy_w GYTRYDQKFQDRATITVDTSINTAYLHVTRLTSDDTAVYYCSRWGGDG-----------------
+test_vh_vl_heavy_7 GYTRYDQKFQDRATITVDTSINTAYLHVTRLTSDDTAVYYCSRWGGDG-----------------
+test_vh_vl_heavy_0 GYTRYAQKFQDRATITVDTSINTAYLHVTRLKSDDTAVYYCSRWGGDG-----------------
+test_vh_vl_heavy_2 GYTRYAQKFQDRATITRDTSINTAYLHVTRLKSDDTAVYYCSRWGGDG-----------------
+test_vh_vl_heavy_3 GYTRYAQKFQDRATITRDTSINTAYLHVTRLKSDDTAVYYCSRWGGDG-----------------
+test_vh_vl_heavy_4 GYTRYAQKFQGRATITRDTSINTAYLHVTRLKSDDTAVYYCSRWGGDG-----------------
+_consensus         ***** **** ***** ************** *********************************
+
+                         130
+test_vh_vl_heavy_w --FYAMDYWGQGALVTVSS
+test_vh_vl_heavy_7 --FYAMDYWGQGALVTVSS
+test_vh_vl_heavy_0 --FYAMDYWGQGALVTVSS
+test_vh_vl_heavy_2 --FYAMDYWGQGALVTVSS
+test_vh_vl_heavy_3 --FYAMDYWGQGALVTVSS
+test_vh_vl_heavy_4 --FYAMDYWGQGALVTVSS
+_consensus         *******************
+

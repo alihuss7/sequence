@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Install ANARCI/AbNatiV from local submodules under ``external/``.
+"""Install ANARCI/AbNatiV from the vendored copies under ``external/``.
 
-This replaces the previous vendored-wheel flow by assuming the upstream
-repositories are checked out as git submodules under ``external/ANARCI`` and
-``external/AbNatiV``. The helper shells out to pip with ``-e`` so edits to the
-submodules are reflected immediately in the active environment.
+The helper shells out to pip with ``-e`` so edits to the vendored sources are
+reflected immediately in the active environment.
 """
 from __future__ import annotations
 
@@ -53,7 +51,7 @@ def main() -> int:
         if not dep.path.exists():
             message = (
                 f"[external-install] Expected directory {dep.path} was not found. "
-                "Did you run 'git submodule update --init external/ANARCI external/AbNatiV'?"
+                "Ensure the vendored external repositories exist inside 'external/'."
             )
             if args.allow_missing:
                 print(f"WARNING: {message}")

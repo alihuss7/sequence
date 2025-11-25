@@ -7,8 +7,7 @@ log() {
 	echo "[postBuild] $1"
 }
 
-log "Syncing git submodules"
-git -C "$PROJECT_ROOT" submodule update --init --depth 1 external/ANARCI external/AbNatiV
+log "External dependencies vendored in repo; skipping submodule sync"
 
 PYTHON_BIN="$(command -v python)"
 if [ -z "$PYTHON_BIN" ]; then
@@ -17,6 +16,35 @@ if [ -z "$PYTHON_BIN" ]; then
 fi
 
 PYTHON_DIR="$(dirname "$PYTHON_BIN")"
+TOOLS_DIR="$PROJECT_ROOT/.tools"
+
+ensure_muscle3() {
+	local muscle_target="$TOOLS_DIR/muscle"
+	if [ -x "$muscle_target" ]; then
+		return
+	fi
+
+	if [ "$(uname -s)" != "Linux" ]; then
+		log "Skipping MUSCLE bootstrap (non-Linux); ensure muscle v3 is on PATH"
+		return
+	fi
+
+	log "Installing MUSCLE 3.8.31 locally"
+	mkdir -p "$TOOLS_DIR"
+	local tmp_dir
+	tmp_dir="$(mktemp -d)"
+	trap "rm -rf \"$tmp_dir\"" EXIT
+	curl -fsSL -o "$tmp_dir/muscle.tar.gz" \
+		https://drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz
+	tar -xzf "$tmp_dir/muscle.tar.gz" -C "$tmp_dir"
+	install -m 0755 "$tmp_dir/muscle3.8.31_i86linux64" "$TOOLS_DIR/muscle3"
+	ln -sf "$TOOLS_DIR/muscle3" "$muscle_target"
+	rm -rf "$tmp_dir"
+	trap - EXIT
+}
+
+ensure_muscle3
+export PATH="$TOOLS_DIR:$PATH"
 
 log "Building ANARCI germlines/HMMs"
 pushd "$PROJECT_ROOT/external/ANARCI/build_pipeline" >/dev/null

@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "abnativ"
+version = "2.0.3"
+description = "AbNatiV: a VQ-VAE-based assessment of the nativeness of antibodies."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8"
+authors = [{ name = "Aubin Ramon", email = "ar2033@cam.ac.uk" }]
+license = { text = "MIT License" }
+
+# We will keep pulling dependencies from environment.yml inside setup.py.
+# Tell setuptools that 'dependencies' will be provided dynamically.
+dynamic = ["dependencies"]
+
+# Console entry point (replaces entry_points in setup.py)
+[project.scripts]
+abnativ = "abnativ.__main__:main"
+
+[tool.setuptools]
+# Auto-discover packages (like find_packages())
+packages = { find = { where = ["."] } }
+
+# Package data (your npy files)
+[tool.setuptools.package-data]
+abnativ = ["pssms/*.npy"]
