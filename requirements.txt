@@ -1,5 +1,4 @@
 abnativ>=2.0.3
-anarci==1.3
 streamlit>=1.29
 pandas>=2.1
 einops>=0.6,<0.9
