@@ -1,0 +1,26 @@
+abnativ>=2.0.3
+anarci @ git+https://github.com/oxpig/ANARCI.git@master
+streamlit>=1.29
+pandas>=2.1
+einops>=0.6,<0.9
+biopython>=1.86
+brewer2mpl>=1.4
+chroma>=0.2
+freesasa>=2.2
+immunebuilder>=1.2
+matplotlib>=3.8
+mlflow>=3.6
+numpy>=1.24,<2
+paretoset>=1.2
+protein-topmodel>=1.0
+python-parallel>=0.9
+pytorch-lightning>=2.5
+pyyaml>=6.0
+scipy>=1.11
+seaborn>=0.13
+pillow>=10.0
+torch==2.1.2
+tqdm>=4.66
+wandb>=0.16
+pdbfixer @ git+https://github.com/openmm/pdbfixer.git
+protobuf<6

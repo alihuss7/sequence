@@ -1,0 +1,9 @@
+[client]
+showSidebarNavigation = false
+
+[theme]
+primaryColor = "#1f77b4"
+
+[server]
+fileWatcherType = "watchdog"
+runOnSave = true
