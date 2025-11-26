@@ -6,6 +6,23 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 import os
+import sys
+
+
+def _maybe_add_vendored_abnativ() -> None:
+    """Ensure the vendored AbNatiV tree is importable when pip install didn't run."""
+
+    repo_root = Path(__file__).resolve().parents[1]
+    vendored_root = repo_root / "external" / "AbNatiV"
+    if not vendored_root.exists():
+        return
+
+    vendored_path = str(vendored_root)
+    if vendored_path not in sys.path:
+        sys.path.insert(0, vendored_path)
+
+
+_maybe_add_vendored_abnativ()
 
 from abnativ.model.scoring_functions import abnativ_scoring
 from Bio.Seq import Seq
