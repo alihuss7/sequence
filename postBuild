@@ -59,7 +59,7 @@ rm -rf "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/HMMs"
 cp -R "$PROJECT_ROOT/external/ANARCI/build_pipeline/HMMs" \
 	"$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/"
 
-log "Installing external ANARCI / AbNatiV / NanoKink from vendored sources"
+log "Installing external ANARCI / AbNatiV / NanoKink / NanoMelt from vendored sources"
 "$PYTHON_BIN" "$PROJECT_ROOT/scripts/install_external_deps.py"
 
 prepare_and_init() {

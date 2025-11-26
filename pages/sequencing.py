@@ -23,6 +23,17 @@ try:
 except ImportError:  # pragma: no cover - NanoKink is optional in dev
     run_nanokink_batch = None
 
+try:
+    from services.nanomelt_client import run_nanomelt_batch
+except ImportError:  # pragma: no cover - NanoMelt is optional in dev
+    run_nanomelt_batch = None
+
+
+MODEL_ABNATIV = "AbNatiV"
+MODEL_NANOKINK = "NanoKink"
+MODEL_NANOMELT = "NanoMelt"
+MODEL_OPTIONS = [MODEL_ABNATIV, MODEL_NANOKINK, MODEL_NANOMELT]
+
 
 RESULT_DF_KEY = "sequencing_results_df"
 RESULT_CSV_KEY = "sequencing_results_csv"
@@ -133,9 +144,7 @@ def render():
             help="Upload a CSV file with sequences",
         )
 
-        model_selection = st.radio(
-            "Select Model", options=["AbNatiV", "Nanokink"], index=0
-        )
+        model_selection = st.radio("Select Model", options=MODEL_OPTIONS, index=0)
 
         run_button = st.button("Run", type="primary", use_container_width=True)
 
@@ -179,7 +188,7 @@ def render():
         st.error(str(exc))
         return
 
-    if model_selection == "AbNatiV":
+    if model_selection == MODEL_ABNATIV:
         if run_abnativ is None:
             st.error(
                 "AbNatiV integration is unavailable. Ensure the dependency is installed."
@@ -232,19 +241,55 @@ def render():
             st.code("\n".join(failures))
         return
 
-    if run_nanokink_batch is None:
+    if model_selection == MODEL_NANOKINK:
+        if run_nanokink_batch is None:
+            st.error(
+                "NanoKink integration is unavailable. Ensure the dependency is installed."
+            )
+            return
+
+        with st.spinner("Running NanoKink..."):
+            results_df, failures = run_nanokink_batch(sequences)
+
+        if results_df is None or results_df.empty:
+            _reset_results_state()
+            _render_output(None, None, None)
+            st.error("NanoKink processing failed for all sequences.")
+            if failures:
+                st.caption("Failure details")
+                st.code("\n".join(failures))
+            return
+
+        csv_buffer = io.StringIO()
+        results_df.to_csv(csv_buffer, index=False)
+        csv_value = csv_buffer.getvalue()
+        csv_filename = "nanokink_results.csv"
+
+        st.session_state[RESULT_DF_KEY] = results_df
+        st.session_state[RESULT_CSV_KEY] = csv_value
+        st.session_state[RESULT_FILENAME_KEY] = csv_filename
+
+        _render_output(results_df, csv_value, csv_filename)
+
+        st.success(f"Processed {len(results_df)} sequence(s) with NanoKink.")
+        if failures:
+            st.warning("Some sequences failed")
+            st.code("\n".join(failures))
+        return
+
+    if run_nanomelt_batch is None:
         st.error(
-            "Nanokink integration is unavailable. Ensure the dependency is installed."
+            "NanoMelt integration is unavailable. Ensure the dependency is installed."
         )
         return
 
-    with st.spinner("Running Nanokink..."):
-        results_df, failures = run_nanokink_batch(sequences)
+    with st.spinner("Running NanoMelt..."):
+        results_df, failures = run_nanomelt_batch(sequences)
 
     if results_df is None or results_df.empty:
         _reset_results_state()
         _render_output(None, None, None)
-        st.error("Nanokink processing failed for all sequences.")
+        st.error("NanoMelt processing failed for all sequences.")
         if failures:
             st.caption("Failure details")
             st.code("\n".join(failures))
@@ -253,7 +298,7 @@ def render():
     csv_buffer = io.StringIO()
     results_df.to_csv(csv_buffer, index=False)
     csv_value = csv_buffer.getvalue()
-    csv_filename = "nanokink_results.csv"
+    csv_filename = "nanomelt_results.csv"
 
     st.session_state[RESULT_DF_KEY] = results_df
     st.session_state[RESULT_CSV_KEY] = csv_value
@@ -261,7 +306,7 @@ def render():
 
     _render_output(results_df, csv_value, csv_filename)
 
-    st.success(f"Processed {len(results_df)} sequence(s) with Nanokink.")
+    st.success(f"Processed {len(results_df)} sequence(s) with NanoMelt.")
     if failures:
         st.warning("Some sequences failed")
         st.code("\n".join(failures))

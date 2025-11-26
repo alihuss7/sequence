@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install ANARCI/AbNatiV/NanoKink from the vendored copies under ``external/``.
+"""Install ANARCI/AbNatiV/NanoKink/NanoMelt from the vendored copies under ``external/``.
 
 The helper shells out to pip with ``-e`` so edits to the vendored sources are
 reflected immediately in the active environment.
@@ -36,6 +36,7 @@ DEPENDENCIES = (
     ExternalDependency("ANARCI", REPO_ROOT / "external" / "ANARCI"),
     ExternalDependency("AbNatiV", REPO_ROOT / "external" / "AbNatiV"),
     ExternalDependency("NanoKink", REPO_ROOT / "external" / "NanoKink"),
+    ExternalDependency("NanoMelt", REPO_ROOT / "external" / "NanoMelt"),
 )
 
 

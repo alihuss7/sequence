@@ -39,7 +39,8 @@ def render():
     )
     st.markdown(
         "<div class='home-subheading'>Explore experimental models powering the Sequencing workspace."
-        " Bring your VH/VL sequences to AbNatiV today and score VHH nanobodies with NanoKink.</div>",
+        " Bring your VH/VL sequences to AbNatiV, profile kink probabilities with NanoKink, and"
+        " estimate nanobody thermostability with NanoMelt.</div>",
         unsafe_allow_html=True,
     )
 
@@ -65,13 +66,29 @@ def render():
         st.markdown(
             """
             <div class='model-card'>
-                <h3>Nanokink</h3>
+                <h3>NanoKink</h3>
                 <p>
-                    Nanokink predicts the probability that a VHH CDR3 adopts a kinked conformation. Use the Sequencing
+                    NanoKink predicts the probability that a VHH CDR3 adopts a kinked conformation. Use the Sequencing
                     tab to batch score nanobody sequences, toggle CSV exports, and inspect calibrated probabilities
                     alongside optional confidence metrics.
                 </p>
                 <p><em>Status: Fully integrated for VHH scoring.</em></p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with st.container():
+        st.markdown(
+            """
+            <div class='model-card'>
+                <h3>NanoMelt</h3>
+                <p>
+                    NanoMelt is a semi-supervised ensemble that stacks SVRs and GPRs on top of diverse nanobody embeddings
+                    (one-hot, VHSE, ESM-1b, ESM-2) to estimate apparent melting temperatures. Use the Sequencing tab to
+                    batch score nanobodies, keeping the CC BY-NC-SA 4.0 license in mind for non-commercial usage.
+                </p>
+                <p><em>Status: Experimental; GPU acceleration recommended for embedding throughput.</em></p>
             </div>
             """,
             unsafe_allow_html=True,
