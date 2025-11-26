@@ -24,3 +24,4 @@ tqdm>=4.66
 wandb>=0.16
 pdbfixer @ git+https://github.com/openmm/pdbfixer.git
 protobuf<6
+altair
