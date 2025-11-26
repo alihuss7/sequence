@@ -89,13 +89,29 @@ The script depends on MUSCLE, HMMER, wget, and curl; on macOS install them via H
 
 ````
 
-## 4. Initialize AbNatiV cache
+## 4. Bundle AbNatiV checkpoints
 
-The `external/AbNatiV` checkout provides the CLI and Python helpers we use in `services/abnativ_client.py`. After installing requirements + external dependencies, download the pretrained checkpoints once per user:
+The `external/AbNatiV` checkout provides the CLI and Python helpers we use in `services/abnativ_client.py`. Streamlit Cloud does not allow outbound downloads, so keep the pretrained checkpoints inside the repo (tracked with Git LFS) and the `postBuild` script will copy them into `~/.abnativ/models/pretrained_models` for each runtime user.
 
-```bash
-abnativ init  # stores weights in ~/.abnativ by default
-````
+1. Install and configure Git LFS (one time per machine):
+
+   ```bash
+   git lfs install
+   git lfs track ".abnativ/models/pretrained_models/*.ckpt"
+   git add .gitattributes
+   ```
+
+2. On a development machine with network access run `abnativ init` once to download the checkpoints locally:
+
+   ```bash
+   abnativ init  # stores weights in ~/.abnativ by default
+   ```
+
+3. Copy the downloaded `.ckpt` files into the repository directory `.abnativ/models/pretrained_models/` and commit them (LFS will store them efficiently).
+
+4. Push to GitHub. During deployment `postBuild` copies everything from `.abnativ/models/pretrained_models` into each user's cache, skipping the network download entirely.
+
+> Deployments that still have outbound access (e.g., local dev or Hugging Face Spaces) can continue to run `abnativ init` the old way; the script automatically falls back to `abnativ init` when no vendored checkpoints are found.
 
 > **Note for Apple Silicon**: the published `anarci` wheel now bundles its HMM assets. If you still encounter missing `ALL.hmm` errors, reinstall ANARCI (`pip install --force-reinstall anarci`) or follow the upstream instructions to rebuild HMMs with `hmmer`.
 
@@ -162,3 +178,4 @@ use_tls = true
 
 5. **Optional custom domain**
    - Paid Spaces tiers allow attaching a custom domain; follow HF instructions to add the DNS CNAME once the app is stable.
+````

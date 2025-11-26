@@ -34,82 +34,7 @@ def _maybe_add_vendored_anarci() -> None:
 _maybe_add_vendored_anarci()
 _maybe_add_vendored_abnativ()
 
-from abnativ import init as abnativ_init
 from abnativ.model.scoring_functions import abnativ_scoring
-
-_DEFAULT_MODEL_FILES = {
-    "VH": "vh_model.ckpt",
-    "VH2": "vh2_model.ckpt",
-    "VH2_RHESUS": "vh2_rhesus_model.ckpt",
-    "VHH": "vhh_model.ckpt",
-    "VHH2": "vhh2_model.ckpt",
-    "VL2": "vl2_model.ckpt",
-    "VL": "vl2_model.ckpt",
-    "VLAMBDA": "vlambda_model.ckpt",
-    "VLAMBDA2": "vl2_model.ckpt",
-    "VKAPPA": "vkappa_model.ckpt",
-    "VKAPPA2": "vkappa2_model.ckpt",
-    "VPAIRED2": "vpaired2_model.ckpt",
-}
-
-
-def _normalize_model_key(nativeness_type: str) -> Optional[str]:
-    """Return the normalized default model key or None when custom ckpts are used."""
-
-    if not nativeness_type:
-        return None
-
-    candidate = nativeness_type.strip()
-    if not candidate:
-        return None
-
-    if (
-        candidate.lower().endswith(".ckpt")
-        or "/" in candidate
-        or os.path.sep in candidate
-    ):
-        # Treat anything that looks like an explicit path as a user-provided checkpoint
-        return None
-
-    return candidate.replace("-", "_").upper()
-
-
-def _ensure_pretrained_model(nativeness_type: str) -> None:
-    """Download the default checkpoint on demand when it is not cached."""
-
-    normalized = _normalize_model_key(nativeness_type)
-    if not normalized:
-        return
-
-    filename = _DEFAULT_MODEL_FILES.get(normalized)
-    if not filename:
-        return
-
-    model_dir = _abnativ_home() / "models" / "pretrained_models"
-    model_path = model_dir / filename
-    if model_path.exists():
-        return
-
-    model_dir.mkdir(parents=True, exist_ok=True)
-    print(f"[abnativ] Downloading missing checkpoint '{filename}' to {model_dir}")
-    try:
-        abnativ_init.ensure_zenodo_models(
-            [filename],
-            do_force_update=False,
-            model_dir=str(model_dir),
-        )
-    except Exception as exc:  # pragma: no cover - network/host dependent
-        raise RuntimeError(
-            f"Unable to fetch checkpoint '{filename}' automatically. "
-            "Ensure outbound network access is available or run 'abnativ init' manually."
-        ) from exc
-
-    if not model_path.exists():  # pragma: no cover - defensive
-        raise RuntimeError(
-            f"Checkpoint download for '{filename}' did not complete; file still missing at {model_path}."
-        )
-
-
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -172,8 +97,6 @@ def run_abnativ(
 
     target_dir = Path(output_dir) if output_dir else _abnativ_home()
     target_dir.mkdir(parents=True, exist_ok=True)
-
-    _ensure_pretrained_model(nativeness_type)
 
     scores_df, profiles_df = abnativ_scoring(
         model_type=nativeness_type,
