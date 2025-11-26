@@ -13,18 +13,18 @@ pinned: false
 
 # Sequencing UI
 
-Interactive Streamlit application for antibody sequencing workflows. The Sequencing tab currently supports AbNatiV nativeness scoring of heavy-chain sequences and exposes placeholders for future Nanokink integration.
+Interactive Streamlit application for antibody sequencing workflows. The Sequencing tab exposes AbNatiV nativeness scoring for VH/VL sequences and NanoKink kink-probability predictions for VHH nanobodies, including CSV uploads and batch processing.
 
 ## 1. Prerequisites
 
-| Requirement                       | Notes                                                                                                                                                        |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| macOS / Linux with Python 3.12+   | Project is tested on macOS Sonoma + Python 3.13 via venv.                                                                                                    |
-| Requirements file                 | `pip install -r requirements.txt` installs the Streamlit UI + core dependencies. Install ANARCI + AbNatiV separately via `scripts/install_external_deps.py`. |
-| Git submodules                    | Run `git submodule update --init external/ANARCI external/AbNatiV` to populate both source trees before installing dependencies.                             |
-| Xcode CLT / build tools           | Needed to compile portions of ANARCI on Apple Silicon.                                                                                                       |
-| HMMER 3.3+, MUSCLE 5+, wget, curl | Used by the ANARCI build pipeline to download germlines/HMMs. Install via `brew install hmmer brewsci/bio/muscle wget`.                                      |
-| Conda or pip                      | We use a `python -m venv` virtualenv, but a conda env works too.                                                                                             |
+| Requirement                       | Notes                                                                                                                                                          |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| macOS / Linux with Python 3.12+   | Project is tested on macOS Sonoma + Python 3.13 via venv.                                                                                                      |
+| Requirements file                 | `pip install -r requirements.txt` installs the Streamlit UI + core dependencies. Install ANARCI, AbNatiV, and NanoKink via `scripts/install_external_deps.py`. |
+| Vendored externals                | The `external/` folder includes ready-to-use copies of ANARCI, AbNatiV, and NanoKink. No submodule sync is required beyond a normal `git clone`.               |
+| Xcode CLT / build tools           | Needed to compile portions of ANARCI on Apple Silicon.                                                                                                         |
+| HMMER 3.3+, MUSCLE 5+, wget, curl | Used by the ANARCI build pipeline to download germlines/HMMs. Install via `brew install hmmer brewsci/bio/muscle wget`.                                        |
+| Conda or pip                      | We use a `python -m venv` virtualenv, but a conda env works too.                                                                                               |
 
 ### Optional (GPU / structure workflows)
 
@@ -54,15 +54,9 @@ Install everything (Streamlit UI, pdbfixer, etc.) from the provided requirements
 pip install -r requirements.txt
 ```
 
-### Install external ANARCI + AbNatiV
+### Install external ANARCI / AbNatiV / NanoKink
 
-Clone the upstream repositories as submodules (one-time):
-
-```bash
-git submodule update --init external/ANARCI external/AbNatiV
-```
-
-Then install both packages from source using the helper script:
+The `external/` directory already contains the vendored sources. Install all three packages from source using the helper script:
 
 ```bash
 python scripts/install_external_deps.py
@@ -91,7 +85,7 @@ The script depends on MUSCLE, HMMER, wget, and curl; on macOS install them via H
 
 ## 4. Initialize AbNatiV cache
 
-The `external/AbNatiV` checkout provides the CLI and Python helpers we use in `services/abnativ_client.py`. After installing requirements + external dependencies, download the pretrained checkpoints once per user:
+The `external/AbNatiV` checkout provides the CLI and Python helpers we use in `services/abnativ_client.py`. After installing requirements + external dependencies (including NanoKink), download the pretrained checkpoints once per user:
 
 ```bash
 abnativ init  # stores weights in ~/.abnativ by default
@@ -141,7 +135,7 @@ use_tls = true
 
 1. **Prepare the repo**
 
-   - Commit the provided `requirements.txt` (installs Streamlit, pdbfixer, etc.) and the `postBuild` script (which installs ANARCI/AbNatiV from `external/` submodules and runs `abnativ init`).
+   - Commit the provided `requirements.txt` (installs Streamlit, pdbfixer, etc.) and the `postBuild` script (which installs ANARCI/AbNatiV/NanoKink from the vendored `external/` sources and runs `abnativ init`).
    - Verify `abnativ init` succeeds locally so you know the package download works on your platform.
 
 2. **Create the Space**

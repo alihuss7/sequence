@@ -18,10 +18,16 @@ try:
 except ImportError:  # pragma: no cover - AbNatiV is optional in dev
     run_abnativ = None
 
+try:
+    from services.nanokink_client import run_nanokink_batch
+except ImportError:  # pragma: no cover - NanoKink is optional in dev
+    run_nanokink_batch = None
+
 
 RESULT_DF_KEY = "sequencing_results_df"
 RESULT_CSV_KEY = "sequencing_results_csv"
 DOWNLOAD_COUNTER_KEY = "sequencing_download_counter"
+RESULT_FILENAME_KEY = "sequencing_results_filename"
 
 
 def _parse_csv_sequences(uploaded_file) -> List[Tuple[str, str]]:
@@ -92,6 +98,7 @@ def _gather_sequences(
 def _reset_results_state() -> None:
     st.session_state.pop(RESULT_DF_KEY, None)
     st.session_state.pop(RESULT_CSV_KEY, None)
+    st.session_state.pop(RESULT_FILENAME_KEY, None)
 
 
 def _next_download_key() -> str:
@@ -137,7 +144,7 @@ def render():
         output_placeholder = st.empty()
         download_placeholder = st.empty()
 
-    def _render_output(df, csv_data):
+    def _render_output(df, csv_data, file_name):
         with output_placeholder:
             if df is not None and not df.empty:
                 st.dataframe(df, use_container_width=True)
@@ -148,7 +155,7 @@ def render():
             st.download_button(
                 label="Download CSV",
                 data=csv_data or "",
-                file_name="abnativ_results.csv",
+                file_name=file_name or "sequencing_results.csv",
                 mime="text/csv",
                 use_container_width=True,
                 disabled=csv_data is None,
@@ -159,20 +166,10 @@ def render():
     _render_output(
         st.session_state.get(RESULT_DF_KEY),
         st.session_state.get(RESULT_CSV_KEY),
+        st.session_state.get(RESULT_FILENAME_KEY),
     )
 
     if not run_button:
-        return
-
-    if model_selection != "AbNatiV":
-        _reset_results_state()
-        st.warning("Nanokink integration is not available yet.")
-        return
-
-    if run_abnativ is None:
-        st.error(
-            "AbNatiV integration is unavailable. Ensure the submodule is installed."
-        )
         return
 
     try:
@@ -182,43 +179,89 @@ def render():
         st.error(str(exc))
         return
 
-    successes: List[Tuple[str, float]] = []
-    failures: List[str] = []
+    if model_selection == "AbNatiV":
+        if run_abnativ is None:
+            st.error(
+                "AbNatiV integration is unavailable. Ensure the dependency is installed."
+            )
+            return
 
-    with st.spinner("Running AbNatiV..."):
-        for sequence_id, sequence_value in sequences:
-            try:
-                result = run_abnativ(
-                    sequence_value,
-                    nativeness_type="VH2",
-                    output_id=sequence_id,
-                )
-            except Exception as exc:
-                failures.append(f"{sequence_id}: {exc}")
-                continue
+        successes: List[Tuple[str, float]] = []
+        failures: List[str] = []
 
-            successes.append((sequence_id, result.nativeness_score))
+        with st.spinner("Running AbNatiV..."):
+            for sequence_id, sequence_value in sequences:
+                try:
+                    result = run_abnativ(
+                        sequence_value,
+                        nativeness_type="VH2",
+                        output_id=sequence_id,
+                    )
+                except Exception as exc:  # pragma: no cover - surface to UI
+                    failures.append(f"{sequence_id}: {exc}")
+                    continue
 
-    if not successes:
+                successes.append((sequence_id, result.nativeness_score))
+
+        if not successes:
+            _reset_results_state()
+            _render_output(None, None, None)
+            st.error("AbNatiV processing failed for all sequences.")
+            if failures:
+                st.caption("Failure details")
+                st.code("\n".join(failures))
+            return
+
+        results_df = pd.DataFrame(
+            successes, columns=["sequence_id", "nativeness_score"]
+        )
+        csv_buffer = io.StringIO()
+        results_df.to_csv(csv_buffer, index=False)
+        csv_value = csv_buffer.getvalue()
+        csv_filename = "abnativ_results.csv"
+
+        st.session_state[RESULT_DF_KEY] = results_df
+        st.session_state[RESULT_CSV_KEY] = csv_value
+        st.session_state[RESULT_FILENAME_KEY] = csv_filename
+
+        _render_output(results_df, csv_value, csv_filename)
+
+        st.success(f"Processed {len(successes)} sequence(s) with AbNatiV.")
+        if failures:
+            st.warning("Some sequences failed")
+            st.code("\n".join(failures))
+        return
+
+    if run_nanokink_batch is None:
+        st.error(
+            "Nanokink integration is unavailable. Ensure the dependency is installed."
+        )
+        return
+
+    with st.spinner("Running Nanokink..."):
+        results_df, failures = run_nanokink_batch(sequences)
+
+    if results_df is None or results_df.empty:
         _reset_results_state()
-        _render_output(None, None)
-        st.error("AbNatiV processing failed for all sequences.")
+        _render_output(None, None, None)
+        st.error("Nanokink processing failed for all sequences.")
         if failures:
             st.caption("Failure details")
             st.code("\n".join(failures))
         return
 
-    results_df = pd.DataFrame(successes, columns=["sequence_id", "nativeness_score"])
     csv_buffer = io.StringIO()
     results_df.to_csv(csv_buffer, index=False)
     csv_value = csv_buffer.getvalue()
+    csv_filename = "nanokink_results.csv"
 
     st.session_state[RESULT_DF_KEY] = results_df
     st.session_state[RESULT_CSV_KEY] = csv_value
+    st.session_state[RESULT_FILENAME_KEY] = csv_filename
 
-    _render_output(results_df, csv_value)
+    _render_output(results_df, csv_value, csv_filename)
 
-    st.success(f"Processed {len(successes)} sequence(s) with AbNatiV.")
+    st.success(f"Processed {len(results_df)} sequence(s) with Nanokink.")
     if failures:
         st.warning("Some sequences failed")
         st.code("\n".join(failures))

@@ -39,7 +39,7 @@ def render():
     )
     st.markdown(
         "<div class='home-subheading'>Explore experimental models powering the Sequencing workspace."
-        " Bring your VH/VL sequences to AbNatiV today; Nanokink arrives soon.</div>",
+        " Bring your VH/VL sequences to AbNatiV today and score VHH nanobodies with NanoKink.</div>",
         unsafe_allow_html=True,
     )
 
@@ -67,11 +67,11 @@ def render():
             <div class='model-card'>
                 <h3>Nanokink</h3>
                 <p>
-                    Nanokink focuses on nanobody stability and developability metrics. Integration is underway;
-                    this space will ultimately expose run controls, tunable thresholds, and visualization for
-                    Nanokink scorecards once the model is available.
+                    Nanokink predicts the probability that a VHH CDR3 adopts a kinked conformation. Use the Sequencing
+                    tab to batch score nanobody sequences, toggle CSV exports, and inspect calibrated probabilities
+                    alongside optional confidence metrics.
                 </p>
-                <p><em>Status: API + weights pending delivery from research team.</em></p>
+                <p><em>Status: Fully integrated for VHH scoring.</em></p>
             </div>
             """,
             unsafe_allow_html=True,

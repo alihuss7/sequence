@@ -6,24 +6,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 import os
-import sys
+
+from ._vendor import prepend_repo_path
 
 
-def _prepend_if_exists(path: Path) -> None:
-    """Insert ``path`` into sys.path so vendored deps are importable."""
-
-    str_path = str(path)
-    if path.exists() and str_path not in sys.path:
-        sys.path.insert(0, str_path)
-
-
-def _ensure_vendored_dependencies() -> None:
-    repo_root = Path(__file__).resolve().parents[1]
-    _prepend_if_exists(repo_root / "external" / "AbNatiV")
-    _prepend_if_exists(repo_root / "external" / "ANARCI" / "lib" / "python")
-
-
-_ensure_vendored_dependencies()
+prepend_repo_path("external", "AbNatiV")
+prepend_repo_path("external", "ANARCI", "lib", "python")
 
 from abnativ.model.scoring_functions import abnativ_scoring
 from Bio.Seq import Seq
