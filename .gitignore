@@ -33,3 +33,9 @@ external/*
 !external/ANARCI
 !external/AbNatiV
 !external/NanoKink
+
+# Large assets regenerated at build time
+external/ANARCI/bin/
+external/ANARCI/Example_scripts_and_sequences/
+external/ANARCI/lib/python/anarci/dat/HMMs/
+external/AbNatiV/test/
