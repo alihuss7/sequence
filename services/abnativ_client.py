@@ -6,33 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 import os
-import sys
-
-
-def _maybe_add_vendored_abnativ() -> None:
-    """Ensure the vendored AbNatiV tree is importable when pip install didn't run."""
-
-    repo_root = Path(__file__).resolve().parents[1]
-    vendored_root = repo_root / "external" / "AbNatiV"
-    if vendored_root.exists():
-        vendored_path = str(vendored_root)
-        if vendored_path not in sys.path:
-            sys.path.insert(0, vendored_path)
-
-
-def _maybe_add_vendored_anarci() -> None:
-    """Expose the bundled ANARCI package (lib/python) when not pip-installed."""
-
-    repo_root = Path(__file__).resolve().parents[1]
-    anarci_root = repo_root / "external" / "ANARCI" / "lib" / "python"
-    if anarci_root.exists():
-        anarci_path = str(anarci_root)
-        if anarci_path not in sys.path:
-            sys.path.insert(0, anarci_path)
-
-
-_maybe_add_vendored_anarci()
-_maybe_add_vendored_abnativ()
 
 from abnativ.model.scoring_functions import abnativ_scoring
 from Bio.Seq import Seq

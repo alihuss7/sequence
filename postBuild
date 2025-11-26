@@ -17,7 +17,6 @@ fi
 
 PYTHON_DIR="$(dirname "$PYTHON_BIN")"
 TOOLS_DIR="$PROJECT_ROOT/.tools"
-VENDORED_MODELS_DIR="$PROJECT_ROOT/.abnativ/models/pretrained_models"
 
 ensure_muscle3() {
 	local muscle_target="$TOOLS_DIR/muscle"
@@ -46,24 +45,6 @@ ensure_muscle3() {
 
 ensure_muscle3
 export PATH="$TOOLS_DIR:$PATH"
-
-copy_vendored_abnativ_models() {
-	local destination="$1"
-	if [ ! -d "$VENDORED_MODELS_DIR" ]; then
-		log "Vendored AbNatiV checkpoints not found at $VENDORED_MODELS_DIR; skipping copy"
-		return 1
-	fi
-
-	if ! compgen -G "$VENDORED_MODELS_DIR/*" >/dev/null 2>&1; then
-		log "Vendored AbNatiV directory exists but is empty; skipping copy"
-		return 1
-	fi
-
-	mkdir -p "$destination"
-	cp -R "$VENDORED_MODELS_DIR"/. "$destination"/
-	log "Copied vendored AbNatiV checkpoints into $destination"
-	return 0
-}
 
 log "Building ANARCI germlines/HMMs"
 pushd "$PROJECT_ROOT/external/ANARCI/build_pipeline" >/dev/null
@@ -96,14 +77,8 @@ prepare_and_init() {
 	mkdir -p "$abnativ_home"
 	chown -R "$username:$username" "$home_dir" || true
 
-	local cache_dir="$abnativ_home/models/pretrained_models"
-	if copy_vendored_abnativ_models "$cache_dir"; then
-		chown -R "$username:$username" "$abnativ_home" || true
-		log "Vendored checkpoints ready for $username; skipping remote download"
-	else
-		log "Vendored checkpoints unavailable; running abnativ init as $username"
-		su "$username" -c "HOME=$home_dir ABNATIV_HOME=$abnativ_home \"$PYTHON_BIN\" -m abnativ.__main__ init"
-	fi
+	log "Running abnativ init as $username"
+	su "$username" -c "HOME=$home_dir ABNATIV_HOME=$abnativ_home \"$PYTHON_BIN\" -m abnativ.__main__ init"
 
 	log "Listing cached files for $username"
 	su "$username" -c "ls -R $abnativ_home || true"
