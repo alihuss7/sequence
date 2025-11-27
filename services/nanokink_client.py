@@ -5,12 +5,9 @@ from __future__ import annotations
 from typing import List, Sequence, Tuple
 
 import pandas as pd
-
 from requests import HTTPError
 
-from .api_client import extract_failures, extract_results, post_json
-
-DEFAULT_BATCH_SIZE = 512
+from .api_client import post_json
 
 
 def _normalize_sequences(
@@ -36,46 +33,67 @@ def _normalize_sequences(
 def run_nanokink_batch(
     sequences: Sequence[Tuple[str, str]],
     *,
-    batch_size: int = DEFAULT_BATCH_SIZE,
     do_alignment: bool = True,
     calculate_confidence: bool = False,
     verbose: bool = False,
 ) -> Tuple[pd.DataFrame, List[str]]:
-    """Run NanoKink predictions for ``sequences`` via the remote API."""
+    """Run NanoKink predictions by submitting one request per sequence."""
 
     if not sequences:
         raise ValueError("At least one sequence is required to call NanoKink.")
 
-    payload_sequences = _normalize_sequences(sequences)
-    if not payload_sequences:
+    seq_records = _normalize_sequences(sequences)
+    if not seq_records:
         raise ValueError("All provided sequences were empty after cleaning.")
 
-    payload = {
-        "sequences": payload_sequences,
-        "batch_size": max(1, batch_size),
-        "do_alignment": do_alignment,
-        "calculate_confidence": calculate_confidence,
-        "verbose": verbose,
-    }
+    results: List[dict] = []
+    failures: List[str] = []
 
-    try:
-        response = post_json("nanokink", payload)
-    except HTTPError as exc:
-        if exc.response is not None and exc.response.status_code == 404:
-            raise RuntimeError("NanoKink API endpoint is unavailable.") from exc
-        raise
-    failures = extract_failures(response)
-    results = extract_results(response)
+    for record in seq_records:
+        payload = {"sequence": record["sequence"]}
+        payload.update(
+            {
+                "do_alignment": do_alignment,
+                "calculate_confidence": calculate_confidence,
+                "verbose": verbose,
+            }
+        )
+
+        try:
+            response = post_json("nanokink", payload)
+        except HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 404:
+                failures.append(
+                    f"{record['sequence_id']}: NanoKink API endpoint is unavailable."
+                )
+            else:
+                failures.append(f"{record['sequence_id']}: {exc}")
+            continue
+        except Exception as exc:  # pragma: no cover - surfaced in UI
+            failures.append(f"{record['sequence_id']}: {exc}")
+            continue
+
+        if not isinstance(response, dict):
+            failures.append(
+                f"{record['sequence_id']}: NanoKink returned a non-JSON payload."
+            )
+            continue
+
+        details = response.get("details")
+        details_data = details if isinstance(details, dict) else {}
+
+        row = {
+            "sequence_id": record["sequence_id"],
+            "sequence": response.get("sequence", record["sequence"]),
+            "tool": response.get("tool"),
+            "probability": response.get("probability"),
+            "raw_score": response.get("raw_score"),
+        }
+        for key, value in details_data.items():
+            row[f"details_{key}"] = value
+        results.append(row)
 
     dataframe = pd.DataFrame(results)
-    if not dataframe.empty:
-        dataframe = dataframe.rename(columns={"name": "sequence_id"})
-        if "sequence_id" not in dataframe.columns:
-            dataframe.insert(
-                0,
-                "sequence_id",
-                [item.get("sequence_id") for item in payload_sequences],
-            )
 
     return dataframe.reset_index(drop=True), failures
 
