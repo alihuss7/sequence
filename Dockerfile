@@ -11,7 +11,8 @@ SHELL ["conda", "run", "-n", "app-env", "/bin/bash", "-c"]
 RUN conda install -c conda-forge -c bioconda -y \
     anarci \
     hmmer \
-    biopython && \
+    biopython \
+    freesasa && \
     conda clean -afy
 
 COPY requirements.txt ./
