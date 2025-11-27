@@ -7,7 +7,7 @@ log() {
 	echo "[postBuild] $1"
 }
 
-log "External dependencies vendored in repo; skipping submodule sync"
+log "External dependencies will be cloned on-demand"
 
 PYTHON_BIN="$(command -v python)"
 if [ -z "$PYTHON_BIN" ]; then
@@ -46,6 +46,9 @@ ensure_muscle3() {
 ensure_muscle3
 export PATH="$TOOLS_DIR:$PATH"
 
+log "Installing external ANARCI plus AbNatiV / NanoKink / NanoMelt via git and caching AbNatiV models"
+"$PYTHON_BIN" "$PROJECT_ROOT/scripts/install_external_deps.py"
+
 log "Building ANARCI germlines/HMMs"
 pushd "$PROJECT_ROOT/external/ANARCI/build_pipeline" >/dev/null
 PATH="$PYTHON_DIR:$PATH" bash RUN_pipeline.sh
@@ -58,6 +61,3 @@ mkdir -p "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat"
 rm -rf "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/HMMs"
 cp -R "$PROJECT_ROOT/external/ANARCI/build_pipeline/HMMs" \
 	"$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/"
-
-log "Installing external ANARCI (vendored) plus AbNatiV / NanoKink / NanoMelt via git and caching AbNatiV models"
-"$PYTHON_BIN" "$PROJECT_ROOT/scripts/install_external_deps.py"

@@ -21,20 +21,13 @@ class ExternalDependency:
     name: str
     path: Path | None = None
     git_url: str | None = None
+    clone_url: str | None = None
     editable: bool = True
 
     def install(self) -> None:
-        if self.git_url is None and self.path is None:
-            raise ValueError(f"Dependency {self.name} missing both path and git URL")
+        """Install the dependency either from a local checkout or directly via git."""
 
-        if self.git_url is not None:
-            source = self.git_url
-            printable_source = source
-        else:
-            assert self.path is not None  # for type checkers
-            source = str(self.path)
-            printable_source = str(self.path.relative_to(REPO_ROOT))
-
+        source, printable_source = self._resolve_source()
         print(f"[external-install] Installing {self.name} from {printable_source}")
 
         cmd = [sys.executable, "-m", "pip", "install", "--no-cache-dir"]
@@ -43,9 +36,39 @@ class ExternalDependency:
         cmd.append(source)
         subprocess.check_call(cmd)
 
+    def _resolve_source(self) -> tuple[str, str]:
+        if self.path is not None:
+            if not self.path.exists():
+                self._bootstrap_local_checkout()
+            relative = str(self.path.relative_to(REPO_ROOT))
+            return str(self.path), relative
+
+        if self.git_url is not None:
+            return self.git_url, self.git_url
+
+        raise ValueError(f"Dependency {self.name} missing both path and git URL")
+
+    def _bootstrap_local_checkout(self) -> None:
+        if self.clone_url is None:
+            raise FileNotFoundError(
+                f"Expected directory {self.path} for {self.name} was not found "
+                "and no clone URL has been provided."
+            )
+
+        print(f"[external-install] Cloning {self.name} into {self.path}")
+        assert self.path is not None  # for type checkers
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.check_call(
+            ["git", "clone", "--depth", "1", self.clone_url, str(self.path)]
+        )
+
 
 DEPENDENCIES = (
-    ExternalDependency("ANARCI", path=REPO_ROOT / "external" / "ANARCI"),
+    ExternalDependency(
+        "ANARCI",
+        path=REPO_ROOT / "external" / "ANARCI",
+        clone_url="https://github.com/oxpig/ANARCI.git",
+    ),
     ExternalDependency(
         "AbNatiV",
         git_url="git+https://gitlab.developers.cam.ac.uk/ch/sormanni/abnativ.git#egg=abnativ",
@@ -74,19 +97,17 @@ def main() -> int:
     args = parser.parse_args()
 
     for dep in DEPENDENCIES:
-        if dep.path is not None and not dep.path.exists():
-            message = (
-                f"[external-install] Expected directory {dep.path} was not found. "
-                "Ensure the vendored external repositories exist inside 'external/'."
-            )
+        try:
+            dep.install()
+        except FileNotFoundError as exc:
             if args.allow_missing:
-                print(f"WARNING: {message}")
+                print(f"WARNING: {exc}")
                 continue
-            raise FileNotFoundError(message)
+            raise
 
-        dep.install()
-
-    print("[external-install] Initialising AbNatiV pretrained models via 'abnativ init'")
+    print(
+        "[external-install] Initialising AbNatiV pretrained models via 'abnativ init'"
+    )
     subprocess.check_call([sys.executable, "-m", "abnativ", "init"])
 
     print("[external-install] External dependency installation complete.")

@@ -33,12 +33,3 @@ saved_model/**/* filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
 *.zst filter=lfs diff=lfs merge=lfs -text
 *tfevents* filter=lfs diff=lfs merge=lfs -text
-external/ANARCI/Example_scripts_and_sequences/pdb_sequences.fa.txt.gz filter=lfs diff=lfs merge=lfs -text
-external/ANARCI/bin/muscle filter=lfs diff=lfs merge=lfs -text
-external/ANARCI/bin/muscle_macOS filter=lfs diff=lfs merge=lfs -text
-external/ANARCI/lib/python/anarci/dat/HMMs/ALL.hmm filter=lfs diff=lfs merge=lfs -text
-external/ANARCI/lib/python/anarci/dat/HMMs/ALL.hmm.h3f filter=lfs diff=lfs merge=lfs -text
-external/ANARCI/lib/python/anarci/dat/HMMs/ALL.hmm.h3i filter=lfs diff=lfs merge=lfs -text
-external/ANARCI/lib/python/anarci/dat/HMMs/ALL.hmm.h3m filter=lfs diff=lfs merge=lfs -text
-external/ANARCI/lib/python/anarci/dat/HMMs/ALL.hmm.h3p filter=lfs diff=lfs merge=lfs -text
-external/AbNatiV/test/**/*.png filter=lfs diff=lfs merge=lfs -text

@@ -27,10 +27,6 @@ Thumbs.db
 pipfreeze/
 .tools/
 
-# Vendored sources fetched at build time (allow tracked submodules)
+# Vendored sources fetched at build time (recreated during install)
 external/*
 !external/.gitkeep
-!external/ANARCI
-!external/AbNatiV
-!external/NanoKink
-!external/NanoMelt

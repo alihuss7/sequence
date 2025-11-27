@@ -57,7 +57,7 @@ pip install -r requirements.txt
 
 ### Install external ANARCI / AbNatiV / NanoKink / NanoMelt
 
-The `external/` directory already contains the vendored sources. Install all four packages from source using the helper script:
+The `scripts/install_external_deps.py` helper clones each upstream project into the ignored `external/` folder (so the GitHub repo stays light) and installs them in the required order:
 
 ```bash
 python scripts/install_external_deps.py
@@ -65,7 +65,7 @@ python scripts/install_external_deps.py
 
 ### Populate ANARCI germlines / HMMs
 
-The upstream ANARCI repository does **not** commit IMGT germlines, so the editable install from `external/ANARCI` will fail with `ModuleNotFoundError: anarci.germlines` until you build the assets locally. Run the pipeline once on every fresh checkout:
+The upstream ANARCI repository does **not** commit IMGT germlines, so the editable install from `external/ANARCI` will fail with `ModuleNotFoundError: anarci.germlines` until you build the assets locally. After running `python scripts/install_external_deps.py` (which clones ANARCI into `external/ANARCI`), execute the pipeline once on every fresh checkout:
 
 ```bash
 # assumes the virtualenv lives in .venv; update PATH if you use conda
@@ -136,7 +136,7 @@ use_tls = true
 
 1. **Prepare the repo**
 
-   - Commit the provided `requirements.txt` (installs Streamlit, pdbfixer, etc.) and the `postBuild` script (which installs ANARCI/AbNatiV/NanoKink/NanoMelt from the vendored `external/` sources and runs `abnativ init`).
+   - Commit the provided `requirements.txt` (installs Streamlit, pdbfixer, etc.) and the `postBuild` script (which clones ANARCI/AbNatiV/NanoKink/NanoMelt, installs them, and runs `abnativ init`).
    - Verify `abnativ init` succeeds locally so you know the package download works on your platform.
 
 2. **Create the Space**

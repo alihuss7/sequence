@@ -1,9 +1,0 @@
-strat_method,num_seed,embeddings,feature_sel,mean_pearson_train,mean_pearson_p_train,std_pearson_train,mean_pearson_test,mean_pearson_p_test,std_pearson_test,mean_spearman_train,mean_spearman_p_train,std_spearman_train,mean_spearman_test,mean_spearman_p_test,std_spearman_test,mean_mae_train,std_mae_train,mean_mae_test,std_mae_test,mean_sdr_train,std_sdr_train,mean_sdr_test,std_sdr_test
-expmeth_clust_kmedoids_blosum,3,onehot,SelectFromModel,0.958,0.0,0.003,0.823,0.0,0.021,0.956,0.0,0.002,0.78,0.0,0.018,2.779,0.045,4.779,0.184,0.796,0.007,0.728,0.037
-expmeth_clust_kmedoids_blosum,3,esm1b,SelectFromModel,0.878,0.0,0.005,0.786,0.0,0.023,0.873,0.0,0.006,0.755,0.0,0.017,4.118,0.096,5.132,0.242,0.739,0.01,0.733,0.054
-expmeth_clust_kmedoids_blosum,3,esm2_t30,SelectFromModel,0.857,0.0,0.005,0.799,0.0,0.018,0.836,0.0,0.002,0.76,0.0,0.016,4.401,0.071,5.059,0.205,0.742,0.009,0.743,0.036
-expmeth_clust_kmedoids_blosum,3,antiberty,SelectFromModel,0.816,0.0,0.01,0.719,0.0,0.022,0.788,0.0,0.008,0.667,0.0,0.02,5.073,0.095,5.923,0.243,0.63,0.01,0.634,0.041
-expmeth_clust_kmedoids_blosum,3,ablang,SelectFromModel,0.831,0.0,0.008,0.729,0.0,0.022,0.805,0.0,0.007,0.684,0.0,0.024,4.86,0.106,5.816,0.282,0.685,0.01,0.692,0.043
-expmeth_clust_kmedoids_blosum,3,nanobuilder,SelectFromModel,0.688,0.0,0.049,0.592,0.0,0.038,0.631,0.0,0.053,0.522,0.0,0.033,6.147,0.474,6.788,0.351,0.62,0.135,0.639,0.141
-expmeth_clust_kmedoids_blosum,3,vhse,SelectFromModel,0.901,0.0,0.026,0.804,0.0,0.027,0.881,0.0,0.034,0.773,0.0,0.026,3.95,0.597,5.03,0.278,0.711,0.061,0.704,0.076
-expmeth_clust_kmedoids_blosum,3,nanobert,SelectFromModel,0.785,0.0,0.06,0.686,0.0,0.032,0.744,0.0,0.066,0.629,0.0,0.044,5.374,0.846,6.304,0.423,0.624,0.151,0.64,0.182
