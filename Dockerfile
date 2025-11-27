@@ -13,7 +13,8 @@ RUN conda install -c conda-forge -c bioconda -y \
     hmmer \
     biopython \
     freesasa \
-    wget && \
+    wget \
+    curl && \
     conda clean -afy
 
 COPY requirements.txt ./
