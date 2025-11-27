@@ -61,28 +61,3 @@ cp -R "$PROJECT_ROOT/external/ANARCI/build_pipeline/HMMs" \
 
 log "Installing external ANARCI / AbNatiV / NanoKink / NanoMelt from vendored sources"
 "$PYTHON_BIN" "$PROJECT_ROOT/scripts/install_external_deps.py"
-
-prepare_and_init() {
-	local username="$1"
-	if ! id -u "$username" >/dev/null 2>&1; then
-		log "Skipping $username; user not found"
-		return
-	fi
-
-	local home_dir
-	home_dir="$(eval echo "~$username")"
-	local abnativ_home="$home_dir/.abnativ"
-
-	log "Preparing AbNatiV cache for $username at $abnativ_home"
-	mkdir -p "$abnativ_home"
-	chown -R "$username:$username" "$home_dir" || true
-
-	log "Running abnativ init as $username"
-	su "$username" -c "HOME=$home_dir ABNATIV_HOME=$abnativ_home \"$PYTHON_BIN\" -m abnativ.__main__ init"
-
-	log "Listing cached files for $username"
-	su "$username" -c "ls -R $abnativ_home || true"
-}
-
-prepare_and_init user
-prepare_and_init root

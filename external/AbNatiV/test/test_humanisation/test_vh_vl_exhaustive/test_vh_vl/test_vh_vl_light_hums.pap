@@ -1,0 +1,24 @@
+                           0
+test_vh_vl_light_w DIQMTQSPSSLSTSVGDRVTITCRAS--QDVN------TAVAWYQQKPGKSPKLLIYS-------
+test_vh_vl_light_3 DIQMTQSPSSLSTSVGDRVTITCRAS--QDVN------TAVAWYQQKPGKSPKLLIYS-------
+test_vh_vl_light_0 DIQMTQSPSSLSTSVGDRVTITCRAS--QDVN------TAVAWYQQKPGKAPKLLIYS-------
+test_vh_vl_light_1 DIQMTQSPSSLSTSVGDRVTITCRAS--QDVN------TAVAWYQQKPGKSPKLLIYS-------
+test_vh_vl_light_2 DIQMTQSPSSLSTSVGDRVTITCRAS--QDVN------TAVAWYQQKPGKAPKLLIYS-------
+_consensus         ************************************************** **************
+
+                          65
+test_vh_vl_light_w -ASFLQTGVPSRFTGSRSG--TDFTFTISSVQAEDVAVYYCQQHYT-------------------
+test_vh_vl_light_3 -ASFLQTGVPSRFTGSRSG--TDFTFTISSVQAEDVAVYYCQQHYT-------------------
+test_vh_vl_light_0 -ASFLQTGVPSRFTGSRSG--TDFTFTISSVQAEDVAVYYCQQHYT-------------------
+test_vh_vl_light_1 -ASFLQTGVPSRFSGSGSG--TDFTFTISSVQAEDVAVYYCQQHYT-------------------
+test_vh_vl_light_2 -ASFLQTGVPSRFSGSGSG--TDFTFTISSVQAEDVAVYYCQQHYT-------------------
+_consensus         ************* ** ************************************************
+
+                         130
+test_vh_vl_light_w ----TPPTFGGGTKVEIK-
+test_vh_vl_light_3 ----TPPTFGGGTKVEIK-
+test_vh_vl_light_0 ----TPPTFGGGTKVEIK-
+test_vh_vl_light_1 ----TPPTFGGGTKVEIK-
+test_vh_vl_light_2 ----TPPTFGGGTKVEIK-
+_consensus         *******************
+
