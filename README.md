@@ -60,8 +60,10 @@ pip install -r requirements.txt
 The `scripts/install_external_deps.py` helper clones each upstream project into the ignored `external/` folder (so the GitHub repo stays light) and installs them in the required order:
 
 ```bash
-python scripts/install_external_deps.py
+python scripts/install_external_deps.py --skip-abnativ-init
 ```
+
+The AbNatiV CLI requires ANARCI germline assets to be present. Run `abnativ init` only after completing the ANARCI build pipeline in the next section (or let `postBuild` handle the entire flow).
 
 ### Populate ANARCI germlines / HMMs
 
@@ -136,7 +138,7 @@ use_tls = true
 
 1. **Prepare the repo**
 
-   - Commit the provided `requirements.txt` (installs Streamlit, pdbfixer, etc.) and the `postBuild` script (which clones ANARCI/AbNatiV/NanoKink/NanoMelt, installs them, and runs `abnativ init`).
+   - Commit the provided `requirements.txt` (installs Streamlit, pdbfixer, etc.) and the `postBuild` script (which clones ANARCI/AbNatiV/NanoKink/NanoMelt, runs the ANARCI build, and initialises the AbNatiV weights).
    - Verify `abnativ init` succeeds locally so you know the package download works on your platform.
 
 2. **Create the Space**
@@ -153,7 +155,7 @@ use_tls = true
 4. **Configure SMTP secrets in the Space**
 
    - Open **Settings → Repository secrets** on the Space and add the SMTP\_\* variables listed above. Streamlit will read them at runtime via `st.secrets` fallback.
-   - The `postBuild` script already runs `abnativ init` for both `user` and `root`, but if the cache is still empty you can manually run `abnativ init` from the Space’s **Logs → Shell** tab.
+   - The `postBuild` script already runs `abnativ init` after preparing ANARCI assets, but if the cache is still empty you can manually run `abnativ init` from the Space’s **Logs → Shell** tab.
 
 5. **Optional custom domain**
    - Paid Spaces tiers allow attaching a custom domain; follow HF instructions to add the DNS CNAME once the app is stable.

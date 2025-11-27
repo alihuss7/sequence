@@ -46,8 +46,8 @@ ensure_muscle3() {
 ensure_muscle3
 export PATH="$TOOLS_DIR:$PATH"
 
-log "Installing external ANARCI plus AbNatiV / NanoKink / NanoMelt via git and caching AbNatiV models"
-"$PYTHON_BIN" "$PROJECT_ROOT/scripts/install_external_deps.py"
+log "Installing external ANARCI plus AbNatiV / NanoKink / NanoMelt via git"
+"$PYTHON_BIN" "$PROJECT_ROOT/scripts/install_external_deps.py" --skip-abnativ-init
 
 log "Building ANARCI germlines/HMMs"
 pushd "$PROJECT_ROOT/external/ANARCI/build_pipeline" >/dev/null
@@ -61,3 +61,6 @@ mkdir -p "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat"
 rm -rf "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/HMMs"
 cp -R "$PROJECT_ROOT/external/ANARCI/build_pipeline/HMMs" \
 	"$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/"
+
+log "Initialising AbNatiV pretrained models via 'abnativ init'"
+"$PYTHON_BIN" -m abnativ.__main__ init

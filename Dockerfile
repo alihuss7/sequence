@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app
 
-RUN python scripts/install_external_deps.py
+RUN bash postBuild
 
 ENV PORT=10000 \
     PYTHONUNBUFFERED=1

@@ -94,6 +94,11 @@ def main() -> int:
         action="store_true",
         help="Print a warning instead of failing when a dependency folder is missing",
     )
+    parser.add_argument(
+        "--skip-abnativ-init",
+        action="store_true",
+        help="Install dependencies only; defer 'abnativ init' to a later step",
+    )
     args = parser.parse_args()
 
     for dep in DEPENDENCIES:
@@ -105,10 +110,13 @@ def main() -> int:
                 continue
             raise
 
-    print(
-        "[external-install] Initialising AbNatiV pretrained models via 'abnativ init'"
-    )
-    subprocess.check_call([sys.executable, "-m", "abnativ", "init"])
+    if args.skip_abnativ_init:
+        print("[external-install] Skipping AbNatiV pretrained model init (per flag)")
+    else:
+        print(
+            "[external-install] Initialising AbNatiV pretrained models via 'abnativ init'"
+        )
+        subprocess.check_call([sys.executable, "-m", "abnativ", "init"])
 
     print("[external-install] External dependency installation complete.")
     return 0
