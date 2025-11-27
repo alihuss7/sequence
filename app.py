@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import errno
 import importlib
 import os
 import subprocess
@@ -7,21 +10,57 @@ from pathlib import Path
 
 import streamlit as st
 from PIL import Image
+from dotenv import load_dotenv
 from assets import image_data
 from style.styles import apply_styles
 from components.header import render_header
 from pages import home, sequencing, database, contact_us
 
-ABNATIV_CACHE_DIR = Path(os.environ.get("ABNATIV_HOME", "/data/.abnativ"))
+load_dotenv()
+
+_DEFAULT_ABNATIV_HOME = Path(os.environ.get("ABNATIV_HOME", "/data/.abnativ"))
+_FALLBACK_ABNATIV_HOME = Path.home() / ".abnativ"
+ABNATIV_CACHE_DIR = _DEFAULT_ABNATIV_HOME
 ABNATIV_INIT_ERROR = None
+
+
+def _select_abnativ_cache_dir() -> Path:
+    """Return a writable cache directory, falling back to the user's home."""
+
+    attempted: list[str] = []
+    candidates = [_DEFAULT_ABNATIV_HOME]
+    if _FALLBACK_ABNATIV_HOME not in candidates:
+        candidates.append(_FALLBACK_ABNATIV_HOME)
+
+    for path in candidates:
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            if exc.errno in (errno.EROFS, errno.EACCES):
+                attempted.append(f"{path} ({exc.strerror or exc})")
+                continue
+            raise
+        else:
+            os.environ["ABNATIV_HOME"] = str(path)
+            return path
+
+    attempted_paths = ", ".join(attempted) or "none"
+    raise RuntimeError(
+        "Unable to create a writable AbNatiV cache directory. "
+        "Set ABNATIV_HOME to a writable location and restart. "
+        f"Attempted: {attempted_paths}."
+    )
 
 
 def ensure_abnativ_models() -> None:
     """Download AbNatiV weights into a persistent cache if missing."""
-    global ABNATIV_INIT_ERROR
+    global ABNATIV_CACHE_DIR, ABNATIV_INIT_ERROR
 
-    os.environ["ABNATIV_HOME"] = str(ABNATIV_CACHE_DIR)
-    ABNATIV_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        ABNATIV_CACHE_DIR = _select_abnativ_cache_dir()
+    except RuntimeError as exc:
+        ABNATIV_INIT_ERROR = str(exc)
+        return
 
     if any(ABNATIV_CACHE_DIR.iterdir()):
         return

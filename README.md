@@ -1,121 +1,65 @@
----
-title: Sormanni Sequencing
-emoji: 🧬
-colorFrom: blue
-colorTo: purple
-sdk: streamlit
-sdk_version: "1.39.0"
-app_file: app.py
-pinned: false
----
-
 # Sequencing UI
 
-# Sequencing UI
+Interactive Streamlit workspace for antibody sequencing workflows. The Sequencing tab calls hosted AbNatiV, NanoKink, and NanoMelt endpoints to batch score VH/VHH sequences, display sortable tables, and export CSV summaries—no local model installs required.
 
-Interactive Streamlit application for antibody sequencing workflows. The Sequencing tab exposes AbNatiV nativeness scoring for VH/VL sequences, NanoKink kink-probability predictions, and NanoMelt thermostability estimates for VHH nanobodies, including CSV uploads and batch processing.
+---
 
-## 1. Prerequisites
-
-| Requirement                       | Notes                                                                                                                                                                    |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| macOS / Linux with Python 3.12+   | Project is tested on macOS Sonoma + Python 3.13 via venv.                                                                                                                |
-| Requirements file                 | `pip install -r requirements.txt` installs the Streamlit UI + core dependencies. Install ANARCI, AbNatiV, NanoKink, and NanoMelt via `scripts/install_external_deps.py`. |
-| Vendored externals                | The `external/` folder includes ready-to-use copies of ANARCI, AbNatiV, NanoKink, and NanoMelt. No submodule sync is required beyond a normal `git clone`.               |
-| Xcode CLT / build tools           | Needed to compile portions of ANARCI on Apple Silicon.                                                                                                                   |
-| HMMER 3.3+, MUSCLE 5+, wget, curl | Used by the ANARCI build pipeline to download germlines/HMMs. Install via `brew install hmmer brewsci/bio/muscle wget`.                                                  |
-| Conda or pip                      | We use a `python -m venv` virtualenv, but a conda env works too.                                                                                                         |
-| NanoMelt licensing                | NanoMelt ships under CC BY-NC-SA 4.0; ensure usage remains non-commercial and provide proper attribution (see `external/NanoMelt/LICENSE`).                              |
-
-### Optional (GPU / structure workflows)
-
-- OpenMM + pdbfixer (via `pip install git+https://github.com/pandegroup/openmm` and `pdbfixer`).
-- AB/NanoBuilder toolchain if you plan to run humanisation commands from the upstream AbNatiV toolkit.
-
-## 2. Clone repository
+## Quick Start
 
 ```bash
 git clone git@gitlab.developers.cam.ac.uk:group/sequencing.git
 cd sequencing
-```
-
-## 3. Create virtual environment
-
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip setuptools wheel
-```
-
-### Install dependencies
-
-Install everything (Streamlit UI, pdbfixer, etc.) from the provided requirements file:
-
-```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
+# echo 'SEQUENCE_LIBRARIES_URL="https://<your-cloud-run-host>"' > .env
+streamlit run app.py
 ```
 
-### Install external ANARCI / AbNatiV / NanoKink / NanoMelt
+AbNatiV, NanoKink, and NanoMelt requests go through the lightweight `services/*_client.py` HTTP helpers and return results directly to the Sequencing page. The app requires `SEQUENCE_LIBRARIES_URL` so it knows which managed deployment to contact—grab the value from Cloud Run (or ask the platform team). Values placed in `.env` are loaded automatically via `python-dotenv`, so once you edit `.env` you no longer need to export anything manually.
 
-The `scripts/install_external_deps.py` helper clones each upstream project into the ignored `external/` folder (so the GitHub repo stays light) and installs them in the required order:
+---
+
+## Managed API Endpoints
+
+| Endpoint    | Description                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| `/`         | Health probe returning basic service metadata.                                            |
+| `/abnativ`  | Scores VH/VL/VHH sequences and returns nativeness values plus optional residue summaries. |
+| `/nanokink` | Predicts kink probabilities + optional alignment metadata for nanobodies.                 |
+| `/nanomelt` | Estimates apparent melting temperatures for VHH nanobodies.                               |
+
+Each endpoint expects JSON containing the sequence(s) plus optional knobs such as `nativeness_type` or `do_alignment`. AbNatiV currently accepts one sequence per request, so the client submits each entry sequentially:
 
 ```bash
-python scripts/install_external_deps.py --skip-abnativ-init
+SERVICE_URL="https://<your-cloud-run-host>"
+curl -X POST \
+  "$SERVICE_URL/abnativ" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "sequence_id": "vh_example",
+        "sequence": "EVQLVESGGGLVQPGGSLRLSCAASGFTFSSYAMSWVRQAPGKGLEWVAS",
+        "nativeness_type": "VH2",
+        "do_align": true,
+        "is_vhh": false
+      }'
 ```
 
-The AbNatiV CLI requires ANARCI germline assets to be present. Run `abnativ init` only after completing the ANARCI build pipeline in the next section (or let `postBuild` handle the entire flow).
+### Environment Variables
 
-### Populate ANARCI germlines / HMMs
+| Variable                 | Default          | Purpose                                                               |
+| ------------------------ | ---------------- | --------------------------------------------------------------------- |
+| `SEQUENCE_LIBRARIES_URL` | unset (required) | Override when pointing at a different deployment or local dev server. |
+| `.env`                   | not committed    | Create manually to store the variable above for reusable local runs.  |
 
-The upstream ANARCI repository does **not** commit IMGT germlines, so the editable install from `external/ANARCI` will fail with `ModuleNotFoundError: anarci.germlines` until you build the assets locally. After running `python scripts/install_external_deps.py` (which clones ANARCI into `external/ANARCI`), execute the pipeline once on every fresh checkout:
+Set these before launching Streamlit (or inside your hosting provider’s UI) to redirect traffic to staging/prod stacks.
 
-```bash
-# assumes the virtualenv lives in .venv; update PATH if you use conda
-REPO=/path/to/sequence
-cd "$REPO"/external/ANARCI/build_pipeline
-PATH="$REPO/.venv/bin:$PATH" bash RUN_pipeline.sh
+---
 
-# copy the generated files into the package that pip installs in editable mode
-cd "$REPO"  # repo root
-cp external/ANARCI/build_pipeline/curated_alignments/germlines.py external/ANARCI/lib/python/anarci/
-mkdir -p external/ANARCI/lib/python/anarci/dat
-cp -R external/ANARCI/build_pipeline/HMMs external/ANARCI/lib/python/anarci/dat/
-```
+## SMTP Settings (Contact Page)
 
-The script depends on MUSCLE, HMMER, wget, and curl; on macOS install them via Homebrew (`brew install brewsci/bio/muscle hmmer wget curl`). Once the files exist under `external/ANARCI/lib/python/anarci/`, re-run `python scripts/install_external_deps.py` to refresh the editable install inside your environment.
-
-````
-
-## 4. Initialize AbNatiV cache
-
-The `external/AbNatiV` checkout provides the CLI and Python helpers we use in `services/abnativ_client.py`. After installing requirements + external dependencies (including NanoKink + NanoMelt), download the pretrained checkpoints once per user:
-
-```bash
-abnativ init  # stores weights in ~/.abnativ by default
-````
-
-> **Note for Apple Silicon**: the published `anarci` wheel now bundles its HMM assets. If you still encounter missing `ALL.hmm` errors, reinstall ANARCI (`pip install --force-reinstall anarci`) or follow the upstream instructions to rebuild HMMs with `hmmer`.
-
-## 5. Run the Streamlit app
-
-```bash
-./.venv/bin/streamlit run app.py
-```
-
-The `.streamlit/config.toml` already enables file watching, so saving Python files reloads the UI. Navigate to the _Sequencing_ page, enter a VH sequence (AHo alignment will run via ANARCI), and click **Run** to fetch nativeness scores from the local AbNatiV weights.
-
-## 6. Troubleshooting
-
-| Symptom                                           | Fix                                                                                                              |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `ALL.hmm` missing / `anarci` fails                | Rerun the ANARCI build pipeline and copy `HMMs` + `germlines.py` into your site-packages as above.               |
-| `openmm` / `pdbfixer` import errors               | Install from conda-forge or pip (Apple Silicon requires `pip install git+https://github.com/pandegroup/openmm`). |
-| ANARCI discards sequence (`header needed change`) | The sequence contains large insertions; trim or align manually—AbNatiV expects ≤149 AHo positions.               |
-| Streamlit duplicate key errors                    | Clear browser cache or restart Streamlit after UI modifications.                                                 |
-
-## 7. Contact form email notifications
-
-The **Contact Us** page sends a notification email via SMTP when a visitor submits the form. Add your SMTP credentials to `.streamlit/secrets.toml` so Streamlit can load them at runtime:
+The **Contact Us** form emails submissions via SMTP. Provide credentials either through `.streamlit/secrets.toml`:
 
 ```toml
 [smtp]
@@ -129,33 +73,27 @@ recipient = "hussainjr.ali@gmail.com"
 use_tls = true
 ```
 
-- `use_ssl` can be set to `true` if your provider requires SMTPS (set `use_tls` to `false` in that case).
-- Generate an app password when using Gmail or any provider that enforces OAuth/MFA.
-- The `recipient` defaults to `hussainjr.ali@gmail.com`, but you can override it to forward messages elsewhere.
-- Alternative (for managed hosts such as Hugging Face Spaces): set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SENDER`, `SMTP_SENDER_NAME`, `SMTP_RECIPIENT`, `SMTP_USE_TLS`, and/or `SMTP_USE_SSL` as environment variables instead of committing a secrets file.
+…or environment variables (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SENDER`, `SMTP_SENDER_NAME`, `SMTP_RECIPIENT`, `SMTP_USE_TLS`, `SMTP_USE_SSL`). Missing credentials trigger an inline warning but do not stop the main app.
 
-## 8. Deploying on Hugging Face Spaces
+---
 
-1. **Prepare the repo**
+## Deploying to Hugging Face Spaces (or similar)
 
-   - Commit the provided `requirements.txt` (installs Streamlit, pdbfixer, etc.) and the `postBuild` script (which clones ANARCI/AbNatiV/NanoKink/NanoMelt, runs the ANARCI build, and initialises the AbNatiV weights).
-   - Verify `abnativ init` succeeds locally so you know the package download works on your platform.
+1. Push this repository to your target Space (Streamlit template works best).
+2. Ensure `postBuild` is executable; it simply runs `pip install -r requirements.txt`.
+3. Configure `SEQUENCE_LIBRARIES_URL` under **Settings → Repository secrets** so the UI reaches the correct Cloud Run instance.
+4. Add SMTP secrets if you want email notifications from the Contact page.
 
-2. **Create the Space**
+Because the heavy ML models now live behind the managed API, deployments are fast and do not require system packages, MUSCLE/HMMER, or GPU hardware.
 
-   - In the Hugging Face UI click **New Space**, pick the **Streamlit** template, choose **CPU** hardware, and give it a name (e.g., `sormanni-sequencing`).
-   - Copy the git URL shown on the Space page (`https://huggingface.co/spaces/<org>/sormanni-sequencing`).
+---
 
-3. **Push code to the Space**
+## Troubleshooting
 
-   - Authenticate once with `huggingface-cli login`.
-   - Add the Space as a remote: `git remote add hf https://huggingface.co/spaces/<org>/sormanni-sequencing`.
-   - Push your branch: `git push hf main`. Spaces will automatically run `pip install -r requirements.txt` and launch `streamlit run app.py`.
+| Symptom                                                      | Suggested Fix                                                                                                                                |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sequencing tab reports "processing failed for all sequences" | Check the Cloud Run logs, confirm the API URL is correct, and ensure the service allows your IP.                                             |
+| Requests hang or time out                                    | The HTTP clients default to `(10s connect, 120s read)` timeouts. Reduce sequence batches or verify the remote service scaling configuration. |
+| Contact form errors                                          | Provide SMTP credentials as described above or disable the button in `pages/contact_us.py`.                                                  |
 
-4. **Configure SMTP secrets in the Space**
-
-   - Open **Settings → Repository secrets** on the Space and add the SMTP\_\* variables listed above. Streamlit will read them at runtime via `st.secrets` fallback.
-   - The `postBuild` script already runs `abnativ init` after preparing ANARCI assets, but if the cache is still empty you can manually run `abnativ init` from the Space’s **Logs → Shell** tab.
-
-5. **Optional custom domain**
-   - Paid Spaces tiers allow attaching a custom domain; follow HF instructions to add the DNS CNAME once the app is stable.
+Reach out via the Contact page or edit the `services/api_client.py` helper if you need to target a different API environment.
