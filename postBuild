@@ -3,64 +3,11 @@ set -euxo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-log() {
-	echo "[postBuild] $1"
-}
-
-log "External dependencies will be cloned on-demand"
-
-PYTHON_BIN="$(command -v python)"
-if [ -z "$PYTHON_BIN" ]; then
-	log "Unable to locate python executable"
-	exit 1
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+	PYTHON_BIN="python"
 fi
 
-PYTHON_DIR="$(dirname "$PYTHON_BIN")"
-TOOLS_DIR="$PROJECT_ROOT/.tools"
-
-ensure_muscle3() {
-	local muscle_target="$TOOLS_DIR/muscle"
-	if [ -x "$muscle_target" ]; then
-		return
-	fi
-
-	if [ "$(uname -s)" != "Linux" ]; then
-		log "Skipping MUSCLE bootstrap (non-Linux); ensure muscle v3 is on PATH"
-		return
-	fi
-
-	log "Installing MUSCLE 3.8.31 locally"
-	mkdir -p "$TOOLS_DIR"
-	local tmp_dir
-	tmp_dir="$(mktemp -d)"
-	trap "rm -rf \"$tmp_dir\"" EXIT
-	curl -fsSL -o "$tmp_dir/muscle.tar.gz" \
-		https://drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz
-	tar -xzf "$tmp_dir/muscle.tar.gz" -C "$tmp_dir"
-	install -m 0755 "$tmp_dir/muscle3.8.31_i86linux64" "$TOOLS_DIR/muscle3"
-	ln -sf "$TOOLS_DIR/muscle3" "$muscle_target"
-	rm -rf "$tmp_dir"
-	trap - EXIT
-}
-
-ensure_muscle3
-export PATH="$TOOLS_DIR:$PATH"
-
-log "Installing external ANARCI plus AbNatiV / NanoKink / NanoMelt via git"
-"$PYTHON_BIN" "$PROJECT_ROOT/scripts/install_external_deps.py" --skip-abnativ-init
-
-log "Building ANARCI germlines/HMMs"
-pushd "$PROJECT_ROOT/external/ANARCI/build_pipeline" >/dev/null
-PATH="$PYTHON_DIR:$PATH" bash RUN_pipeline.sh
-popd >/dev/null
-
-log "Copying ANARCI assets into editable package"
-cp "$PROJECT_ROOT/external/ANARCI/build_pipeline/curated_alignments/germlines.py" \
-	"$PROJECT_ROOT/external/ANARCI/lib/python/anarci/"
-mkdir -p "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat"
-rm -rf "$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/HMMs"
-cp -R "$PROJECT_ROOT/external/ANARCI/build_pipeline/HMMs" \
-	"$PROJECT_ROOT/external/ANARCI/lib/python/anarci/dat/"
-
-log "Initialising AbNatiV pretrained models via 'abnativ init'"
-"$PYTHON_BIN" -m abnativ.__main__ init
+echo "[postBuild] Installing application dependencies"
+"$PYTHON_BIN" -m pip install --upgrade pip
+"$PYTHON_BIN" -m pip install --upgrade -r "$PROJECT_ROOT/requirements.txt"

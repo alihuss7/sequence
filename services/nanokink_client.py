@@ -1,4 +1,4 @@
-"""Thin wrapper around the NanoKink prediction helpers."""
+"""HTTP client for the managed NanoKink Cloud Run endpoint."""
 
 from __future__ import annotations
 
@@ -6,30 +6,31 @@ from typing import List, Sequence, Tuple
 
 import pandas as pd
 
-from ._vendor import prepend_repo_path
+from requests import HTTPError
 
-prepend_repo_path("external", "NanoKink")
-
-from nanokink import predict_kink_probabilities, results_to_dataframe  # type: ignore
+from .api_client import extract_failures, extract_results, post_json
 
 DEFAULT_BATCH_SIZE = 512
 
 
 def _normalize_sequences(
     sequences: Sequence[Tuple[str, str]],
-) -> Tuple[List[str], List[str]]:
-    ids: List[str] = []
-    values: List[str] = []
+) -> List[dict]:
+    normalized: List[dict] = []
 
     for idx, (sequence_id, sequence_value) in enumerate(sequences, start=1):
         cleaned_sequence = (sequence_value or "").strip().replace("\n", "")
         if not cleaned_sequence:
             continue
 
-        ids.append(sequence_id or f"sequence_{idx}")
-        values.append(cleaned_sequence)
+        normalized.append(
+            {
+                "sequence_id": sequence_id or f"sequence_{idx}",
+                "sequence": cleaned_sequence,
+            }
+        )
 
-    return ids, values
+    return normalized
 
 
 def run_nanokink_batch(
@@ -40,46 +41,41 @@ def run_nanokink_batch(
     calculate_confidence: bool = False,
     verbose: bool = False,
 ) -> Tuple[pd.DataFrame, List[str]]:
-    """Run NanoKink predictions for ``sequences``.
-
-    Returns a tuple of ``(success_df, failures)`` where ``success_df`` contains the
-    successfully scored rows and ``failures`` lists the sequence IDs that errored.
-    """
+    """Run NanoKink predictions for ``sequences`` via the remote API."""
 
     if not sequences:
         raise ValueError("At least one sequence is required to call NanoKink.")
 
-    names, cleaned_sequences = _normalize_sequences(sequences)
-    if not cleaned_sequences:
+    payload_sequences = _normalize_sequences(sequences)
+    if not payload_sequences:
         raise ValueError("All provided sequences were empty after cleaning.")
 
-    effective_batch_size = max(1, min(batch_size, len(cleaned_sequences)))
+    payload = {
+        "sequences": payload_sequences,
+        "batch_size": max(1, batch_size),
+        "do_alignment": do_alignment,
+        "calculate_confidence": calculate_confidence,
+        "verbose": verbose,
+    }
 
-    results = predict_kink_probabilities(
-        cleaned_sequences,
-        batch_size=effective_batch_size,
-        do_alignment=do_alignment,
-        calculate_confidence=calculate_confidence,
-        verbose=verbose,
-    )
+    try:
+        response = post_json("nanokink", payload)
+    except HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            raise RuntimeError("NanoKink API endpoint is unavailable.") from exc
+        raise
+    failures = extract_failures(response)
+    results = extract_results(response)
 
-    dataframe = results_to_dataframe(
-        results,
-        names=names,
-        do_alignment=do_alignment,
-    ).rename(columns={"name": "sequence_id"})
-
-    failures: List[str] = []
-    if "error" in dataframe.columns:
-        error_mask = dataframe["error"].notna()
-        if error_mask.any():
-            failures = [
-                f"{row.sequence_id}: {row.error}"
-                for row in dataframe.loc[
-                    error_mask, ["sequence_id", "error"]
-                ].itertuples(index=False)
-            ]
-        dataframe = dataframe.loc[~error_mask].drop(columns=["error"], errors="ignore")
+    dataframe = pd.DataFrame(results)
+    if not dataframe.empty:
+        dataframe = dataframe.rename(columns={"name": "sequence_id"})
+        if "sequence_id" not in dataframe.columns:
+            dataframe.insert(
+                0,
+                "sequence_id",
+                [item.get("sequence_id") for item in payload_sequences],
+            )
 
     return dataframe.reset_index(drop=True), failures
 

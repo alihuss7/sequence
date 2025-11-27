@@ -13,20 +13,9 @@ except ImportError:  # pragma: no cover - pandas should be part of Streamlit sta
 
 import streamlit as st
 
-try:
-    from services.abnativ_client import run_abnativ
-except ImportError:  # pragma: no cover - AbNatiV is optional in dev
-    run_abnativ = None
-
-try:
-    from services.nanokink_client import run_nanokink_batch
-except ImportError:  # pragma: no cover - NanoKink is optional in dev
-    run_nanokink_batch = None
-
-try:
-    from services.nanomelt_client import run_nanomelt_batch
-except ImportError:  # pragma: no cover - NanoMelt is optional in dev
-    run_nanomelt_batch = None
+from services.abnativ_client import run_abnativ
+from services.nanokink_client import run_nanokink_batch
+from services.nanomelt_client import run_nanomelt_batch
 
 
 MODEL_ABNATIV = "AbNatiV"
@@ -189,16 +178,10 @@ def render():
         return
 
     if model_selection == MODEL_ABNATIV:
-        if run_abnativ is None:
-            st.error(
-                "AbNatiV integration is unavailable. Ensure the dependency is installed."
-            )
-            return
-
         successes: List[Tuple[str, float]] = []
         failures: List[str] = []
 
-        with st.spinner("Running AbNatiV..."):
+        with st.spinner("Calling AbNatiV API..."):
             for sequence_id, sequence_value in sequences:
                 try:
                     result = run_abnativ(
@@ -235,20 +218,14 @@ def render():
 
         _render_output(results_df, csv_value, csv_filename)
 
-        st.success(f"Processed {len(successes)} sequence(s) with AbNatiV.")
+        st.success(f"Processed {len(successes)} sequence(s) via AbNatiV API.")
         if failures:
             st.warning("Some sequences failed")
             st.code("\n".join(failures))
         return
 
     if model_selection == MODEL_NANOKINK:
-        if run_nanokink_batch is None:
-            st.error(
-                "NanoKink integration is unavailable. Ensure the dependency is installed."
-            )
-            return
-
-        with st.spinner("Running NanoKink..."):
+        with st.spinner("Calling NanoKink API..."):
             results_df, failures = run_nanokink_batch(sequences)
 
         if results_df is None or results_df.empty:
@@ -271,19 +248,13 @@ def render():
 
         _render_output(results_df, csv_value, csv_filename)
 
-        st.success(f"Processed {len(results_df)} sequence(s) with NanoKink.")
+        st.success(f"Processed {len(results_df)} sequence(s) via NanoKink API.")
         if failures:
             st.warning("Some sequences failed")
             st.code("\n".join(failures))
         return
 
-    if run_nanomelt_batch is None:
-        st.error(
-            "NanoMelt integration is unavailable. Ensure the dependency is installed."
-        )
-        return
-
-    with st.spinner("Running NanoMelt..."):
+    with st.spinner("Calling NanoMelt API..."):
         results_df, failures = run_nanomelt_batch(sequences)
 
     if results_df is None or results_df.empty:
@@ -306,7 +277,7 @@ def render():
 
     _render_output(results_df, csv_value, csv_filename)
 
-    st.success(f"Processed {len(results_df)} sequence(s) with NanoMelt.")
+    st.success(f"Processed {len(results_df)} sequence(s) via NanoMelt API.")
     if failures:
         st.warning("Some sequences failed")
         st.code("\n".join(failures))
