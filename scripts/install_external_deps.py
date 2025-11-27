@@ -53,7 +53,7 @@ DEPENDENCIES = (
     ),
     ExternalDependency(
         "NanoKink",
-        git_url="git+https://github.com/pypa/sampleproject.git#egg=nanokink",
+        git_url="git+https://gitlab.developers.cam.ac.uk/ch/sormanni/nanomelt.git#egg=nanomelt",
         editable=False,
     ),
     ExternalDependency(
@@ -85,6 +85,9 @@ def main() -> int:
             raise FileNotFoundError(message)
 
         dep.install()
+
+    print("[external-install] Initialising AbNatiV pretrained models via 'abnativ init'")
+    subprocess.check_call([sys.executable, "-m", "abnativ", "init"])
 
     print("[external-install] External dependency installation complete.")
     return 0
