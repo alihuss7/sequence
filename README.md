@@ -1,6 +1,22 @@
-# Sequencing UI
+# Sormanni Lab Sequencing Platform
 
-Interactive Streamlit workspace for antibody sequencing workflows. The Sequencing tab calls hosted AbNatiV, NanoKink, and NanoMelt endpoints to batch score VH/VHH sequences, display sortable tables, and export CSV summaries—no local model installs required.
+> A modern web application for antibody sequence analysis powered by state-of-the-art machine learning models
+
+## Overview
+
+The **Sormanni Sequencing Platform** is an interactive Streamlit-based web interface that streamlines antibody sequencing workflows for researchers and scientists. This platform provides seamless access to three specialized ML-powered endpoints—**AbNatiV**, **NanoKink**, and **NanoMelt**—enabling rapid batch analysis of antibody sequences without requiring local model installations or GPU hardware.
+
+### Key Features
+
+- 🧬 **Multi-Model Analysis**: Unified interface for AbNatiV (nativeness scoring), NanoKink (kink prediction), and NanoMelt (thermal stability estimation)
+- 📊 **Batch Processing**: Upload CSV files containing multiple sequences and process them efficiently
+- 📈 **Interactive Results**: Sortable tables with detailed metrics and per-residue analysis
+- 💾 **Data Export**: Download comprehensive results as CSV for further analysis
+- 🔬 **Database Management**: Track and organize your sequencing runs
+- 📧 **Contact Form**: Built-in support form with SMTP integration
+- ☁️ **Cloud-Native**: Leverages managed API endpoints for scalable, maintenance-free deployment
+
+Whether you're analyzing variable heavy (VH) chains, VHH nanobodies, or exploring antibody engineering candidates, this platform provides a fast, user-friendly interface to cutting-edge computational tools.
 
 ---
 
