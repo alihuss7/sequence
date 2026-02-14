@@ -74,6 +74,7 @@ def run_nbforge_batch(
     for record in seq_records:
         payload: Dict[str, Any] = {
             "sequence": record["sequence"],
+            "vhh_name": record["sequence_id"],
             "VHH_name": record["sequence_id"],
             "no_minimize": not minimize,
             "nbframe": include_nbframe,

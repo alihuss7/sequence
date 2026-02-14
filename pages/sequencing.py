@@ -24,6 +24,7 @@ MODEL_NBFORGE = "NbForge"
 MODEL_NBFRAME = "NbFrame"
 MODEL_NANOMELT = "NanoMelt"
 MODEL_OPTIONS = [MODEL_ABNATIV, MODEL_NBFORGE, MODEL_NBFRAME, MODEL_NANOMELT]
+ABNATIV_MIN_SEQUENCE_LENGTH = 95
 
 
 RESULT_DF_KEY = "sequencing_results_df"
@@ -97,6 +98,28 @@ def _gather_sequences(
     return sequences
 
 
+def _looks_like_valid_protein_sequence(sequence: str) -> bool:
+    allowed = set("ACDEFGHIKLMNPQRSTVWY")
+    return bool(sequence) and all(residue in allowed for residue in sequence.upper())
+
+
+def _abnativ_sequence_status(sequence: str) -> tuple[str, str]:
+    cleaned = sequence.strip().replace("\n", "").upper()
+    if not cleaned:
+        return (
+            "info",
+            f"AbNatiV expects a full variable-domain sequence (>= {ABNATIV_MIN_SEQUENCE_LENGTH} aa).",
+        )
+    if not _looks_like_valid_protein_sequence(cleaned):
+        return ("warning", "Sequence has non-standard amino-acid characters.")
+    if len(cleaned) < ABNATIV_MIN_SEQUENCE_LENGTH:
+        return (
+            "warning",
+            f"Sequence length is {len(cleaned)} aa. AbNatiV usually needs >= {ABNATIV_MIN_SEQUENCE_LENGTH} aa.",
+        )
+    return ("success", f"Sequence length is {len(cleaned)} aa. Looks valid for AbNatiV.")
+
+
 def _reset_results_state() -> None:
     st.session_state.pop(RESULT_DF_KEY, None)
     st.session_state.pop(RESULT_CSV_KEY, None)
@@ -142,44 +165,14 @@ def render():
         )
 
         model_selection = st.radio("Select Model", options=MODEL_OPTIONS, index=0)
-
-        nbforge_use_gpu = False
-        nbforge_gpu_device = ""
-        nbforge_minimize = True
-        nbforge_with_nbframe = False
-        nbframe_kinked_threshold = 0.70
-        nbframe_extended_threshold = 0.40
-
-        if model_selection == MODEL_NBFORGE:
-            st.caption("NbForge options")
-            nbforge_use_gpu = st.checkbox("Use GPU", value=False)
-            if nbforge_use_gpu:
-                nbforge_gpu_device = st.text_input(
-                    "GPU device",
-                    value="0",
-                    help="GPU index (e.g. 0) or torch device string (e.g. cuda:0).",
-                ).strip()
-            nbforge_minimize = st.checkbox("Run OpenMM minimization", value=True)
-            nbforge_with_nbframe = st.checkbox(
-                "Include NbFrame scores in NbForge output", value=False
-            )
-
-        if model_selection == MODEL_NBFRAME:
-            st.caption("NbFrame options (sequence classifier)")
-            nbframe_kinked_threshold = st.slider(
-                "Kinked threshold",
-                min_value=0.0,
-                max_value=1.0,
-                value=0.70,
-                step=0.01,
-            )
-            nbframe_extended_threshold = st.slider(
-                "Extended threshold",
-                min_value=0.0,
-                max_value=1.0,
-                value=0.40,
-                step=0.01,
-            )
+        if model_selection == MODEL_ABNATIV:
+            status, message = _abnativ_sequence_status(heavy_chain_sequence)
+            if status == "success":
+                st.success(message)
+            elif status == "warning":
+                st.warning(message)
+            else:
+                st.info(message)
 
         run_button = st.button("Run", type="primary", use_container_width=True)
 
@@ -229,9 +222,21 @@ def render():
 
         with st.spinner("Calling AbNatiV API..."):
             for sequence_id, sequence_value in sequences:
+                cleaned = sequence_value.strip().replace("\n", "").upper()
+                if len(cleaned) < ABNATIV_MIN_SEQUENCE_LENGTH:
+                    failures.append(
+                        f"{sequence_id}: sequence too short for AbNatiV; provide a full variable-domain sequence "
+                        f"(>= {ABNATIV_MIN_SEQUENCE_LENGTH} aa)."
+                    )
+                    continue
+                if not _looks_like_valid_protein_sequence(cleaned):
+                    failures.append(
+                        f"{sequence_id}: sequence contains non-standard amino-acid characters."
+                    )
+                    continue
                 try:
                     result = run_abnativ(
-                        sequence_value,
+                        cleaned,
                         nativeness_type="VH2",
                         output_id=sequence_id,
                     )
@@ -269,13 +274,7 @@ def render():
 
     if model_selection == MODEL_NBFORGE:
         with st.spinner("Calling NbForge API..."):
-            results_df, failures = run_nbforge_batch(
-                sequences,
-                use_gpu=nbforge_use_gpu,
-                gpu_device=nbforge_gpu_device,
-                minimize=nbforge_minimize,
-                include_nbframe=nbforge_with_nbframe,
-            )
+            results_df, failures = run_nbforge_batch(sequences)
 
         if results_df is None or results_df.empty:
             _reset_results_state()
@@ -302,11 +301,7 @@ def render():
 
     if model_selection == MODEL_NBFRAME:
         with st.spinner("Calling NbFrame API..."):
-            results_df, failures = run_nbframe_batch(
-                sequences,
-                kinked_threshold=nbframe_kinked_threshold,
-                extended_threshold=nbframe_extended_threshold,
-            )
+            results_df, failures = run_nbframe_batch(sequences)
 
         if results_df is None or results_df.empty:
             _reset_results_state()
