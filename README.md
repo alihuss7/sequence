@@ -63,6 +63,15 @@ curl -X POST \
       }'
 ```
 
+### Model Input Notes
+
+| Model      | Best Used For                                     | Input Expectations                                         | Common Failure Mode |
+| ---------- | ------------------------------------------------- | ---------------------------------------------------------- | ------------------- |
+| AbNatiV    | Nativeness scoring of antibody variable domains   | Full variable-domain sequence (typically ~95-130 aa), standard amino-acid letters only | Short fragments can fail scoring/alignment on the backend |
+| NbForge    | Single-sequence nanobody structure prediction     | Full VHH sequence with antibody-like framework regions     | ANARCI numbering fails on non-antibody-like or truncated inputs |
+| NbFrame    | CDR3 conformation classification (kinked/extended/uncertain) | Sequence suitable for antibody alignment/numbering         | Returns alignment error for malformed or short sequences |
+| NanoMelt   | Apparent melting temperature estimate             | Full nanobody sequence recommended                         | Inference can be slower and may hit timeout limits |
+
 ### Environment Variables
 
 | Variable                 | Default          | Purpose                                                               |

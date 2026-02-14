@@ -25,6 +25,13 @@ MODEL_NBFRAME = "NbFrame"
 MODEL_NANOMELT = "NanoMelt"
 MODEL_OPTIONS = [MODEL_ABNATIV, MODEL_NBFORGE, MODEL_NBFRAME, MODEL_NANOMELT]
 ABNATIV_MIN_SEQUENCE_LENGTH = 95
+MODEL_RECOMMENDED_MIN_LENGTH = 95
+MODEL_NOTES = {
+    MODEL_ABNATIV: "AbNatiV expects a full variable-domain sequence (>= 95 aa).",
+    MODEL_NBFORGE: "NbForge works best with full VHH sequences; short fragments may fail ANARCI numbering.",
+    MODEL_NBFRAME: "NbFrame expects antibody-like sequence input; malformed or short sequences may fail alignment.",
+    MODEL_NANOMELT: "NanoMelt works best with full nanobody sequences and can take longer to return results.",
+}
 
 
 RESULT_DF_KEY = "sequencing_results_df"
@@ -120,6 +127,23 @@ def _abnativ_sequence_status(sequence: str) -> tuple[str, str]:
     return ("success", f"Sequence length is {len(cleaned)} aa. Looks valid for AbNatiV.")
 
 
+def _model_sequence_status(model: str, sequence: str) -> tuple[str, str]:
+    if model == MODEL_ABNATIV:
+        return _abnativ_sequence_status(sequence)
+
+    cleaned = sequence.strip().replace("\n", "").upper()
+    if not cleaned:
+        return ("info", MODEL_NOTES[model])
+    if not _looks_like_valid_protein_sequence(cleaned):
+        return ("warning", "Sequence has non-standard amino-acid characters.")
+    if len(cleaned) < MODEL_RECOMMENDED_MIN_LENGTH:
+        return (
+            "warning",
+            f"Sequence length is {len(cleaned)} aa. Full domains (>= {MODEL_RECOMMENDED_MIN_LENGTH} aa) are recommended.",
+        )
+    return ("success", f"Sequence length is {len(cleaned)} aa. Input looks good for {model}.")
+
+
 def _reset_results_state() -> None:
     st.session_state.pop(RESULT_DF_KEY, None)
     st.session_state.pop(RESULT_CSV_KEY, None)
@@ -165,14 +189,13 @@ def render():
         )
 
         model_selection = st.radio("Select Model", options=MODEL_OPTIONS, index=0)
-        if model_selection == MODEL_ABNATIV:
-            status, message = _abnativ_sequence_status(heavy_chain_sequence)
-            if status == "success":
-                st.success(message)
-            elif status == "warning":
-                st.warning(message)
-            else:
-                st.info(message)
+        status, message = _model_sequence_status(model_selection, heavy_chain_sequence)
+        if status == "success":
+            st.success(message)
+        elif status == "warning":
+            st.warning(message)
+        else:
+            st.info(message)
 
         run_button = st.button("Run", type="primary", use_container_width=True)
 
