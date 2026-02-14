@@ -39,13 +39,13 @@ AbNatiV, NbForge, NbFrame, and NanoMelt requests go through the lightweight `ser
 
 ## Managed API Endpoints
 
-| Endpoint    | Description                                                                               |
-| ----------- | ----------------------------------------------------------------------------------------- |
-| `/`         | Health probe returning basic service metadata.                                            |
-| `/abnativ`  | Scores VH/VL/VHH sequences and returns nativeness values plus optional residue summaries. |
+| Endpoint    | Description                                                                                   |
+| ----------- | --------------------------------------------------------------------------------------------- |
+| `/`         | Health probe returning basic service metadata.                                                |
+| `/abnativ`  | Scores VH/VL/VHH sequences and returns nativeness values plus optional residue summaries.     |
 | `/nbforge`  | Runs nanobody sequence-to-structure inference with optional minimization and NbFrame scoring. |
-| `/nbframe`  | Classifies CDR3 conformation as kinked/extended/uncertain from sequence or structure inputs. |
-| `/nanomelt` | Estimates apparent melting temperatures for VHH nanobodies.                               |
+| `/nbframe`  | Classifies CDR3 conformation as kinked/extended/uncertain from sequence or structure inputs.  |
+| `/nanomelt` | Estimates apparent melting temperatures for VHH nanobodies.                                   |
 
 Each endpoint expects JSON containing the sequence(s) plus optional knobs such as `nativeness_type` or `do_alignment`. AbNatiV currently accepts one sequence per request, so the client submits each entry sequentially:
 
@@ -56,7 +56,7 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -d '{
         "sequence_id": "vh_example",
-        "sequence": "EVQLVESGGGLVQPGGSLRLSCAASGFTFSSYAMSWVRQAPGKGLEWVAS",
+        "sequence": "EVQLVESGGGLVQPGGSLRLSCAASGFTFSSYAMSWVRQAPGKGLEWVSAISWNSGSTYYADSVKGRFTISRDNAKNTVYLQMNSLKPEDTAVYYCAKYPYYYGMDVWGQGTTVTVSS",
         "nativeness_type": "VH2",
         "do_align": true,
         "is_vhh": false
@@ -65,12 +65,12 @@ curl -X POST \
 
 ### Model Input Notes
 
-| Model      | Best Used For                                     | Input Expectations                                         | Common Failure Mode |
-| ---------- | ------------------------------------------------- | ---------------------------------------------------------- | ------------------- |
-| AbNatiV    | Nativeness scoring of antibody variable domains   | Full variable-domain sequence (typically ~95-130 aa), standard amino-acid letters only | Short fragments can fail scoring/alignment on the backend |
-| NbForge    | Single-sequence nanobody structure prediction     | Full VHH sequence with antibody-like framework regions     | ANARCI numbering fails on non-antibody-like or truncated inputs |
-| NbFrame    | CDR3 conformation classification (kinked/extended/uncertain) | Sequence suitable for antibody alignment/numbering         | Returns alignment error for malformed or short sequences |
-| NanoMelt   | Apparent melting temperature estimate             | Full nanobody sequence recommended                         | Inference can be slower and may hit timeout limits |
+| Model    | Best Used For                                                | Input Expectations                                                                     | Common Failure Mode                                             |
+| -------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| AbNatiV  | Nativeness scoring of antibody variable domains              | Full variable-domain sequence (typically ~95-130 aa), standard amino-acid letters only | Short fragments can fail scoring/alignment on the backend       |
+| NbForge  | Single-sequence nanobody structure prediction                | Full VHH sequence with antibody-like framework regions                                 | ANARCI numbering fails on non-antibody-like or truncated inputs |
+| NbFrame  | CDR3 conformation classification (kinked/extended/uncertain) | Sequence suitable for antibody alignment/numbering                                     | Returns alignment error for malformed or short sequences        |
+| NanoMelt | Apparent melting temperature estimate                        | Full nanobody sequence recommended                                                     | Inference can be slower and may hit timeout limits              |
 
 ### Environment Variables
 
