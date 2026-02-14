@@ -39,8 +39,8 @@ def render():
     )
     st.markdown(
         "<div class='home-subheading'>Explore experimental models powering the Sequencing workspace."
-        " Bring your VH/VL sequences to AbNatiV, profile kink probabilities with NanoKink, and"
-        " estimate nanobody thermostability with NanoMelt.</div>",
+        " Bring your VH/VL sequences to AbNatiV, run end-to-end structure prediction with NbForge,"
+        " classify CDR3 conformations with NbFrame, and estimate nanobody thermostability with NanoMelt.</div>",
         unsafe_allow_html=True,
     )
 
@@ -66,13 +66,28 @@ def render():
         st.markdown(
             """
             <div class='model-card'>
-                <h3>NanoKink</h3>
+                <h3>NbForge</h3>
                 <p>
-                    NanoKink predicts the probability that a VHH CDR3 adopts a kinked conformation. Use the Sequencing
-                    tab to batch score nanobody sequences, toggle CSV exports, and inspect calibrated probabilities
-                    alongside optional confidence metrics.
+                    NbForge is our CLI-first nanobody structure prediction workflow exposed as a managed API. It performs
+                    VHH-domain checks and trimming, writes AHo-numbered outputs, and can optionally include integrated
+                    NbFrame sequence and structure scores.
                 </p>
-                <p><em>Status: Fully integrated for VHH scoring.</em></p>
+                <p><em>Status: Integrated for sequence-to-structure inference.</em></p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with st.container():
+        st.markdown(
+            """
+            <div class='model-card'>
+                <h3>NbFrame</h3>
+                <p>
+                    NbFrame predicts whether a VHH CDR3 is kinked, extended, or uncertain. Use the Sequencing tab to batch
+                    classify sequences with configurable probability thresholds and export the results for screening.
+                </p>
+                <p><em>Status: Integrated for sequence-based classification.</em></p>
             </div>
             """,
             unsafe_allow_html=True,

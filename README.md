@@ -4,11 +4,11 @@
 
 ## Overview
 
-The **Sormanni Sequencing Platform** is an interactive Streamlit-based web interface that streamlines antibody sequencing workflows for researchers and scientists. This platform provides seamless access to three specialized ML-powered endpoints—**AbNatiV**, **NanoKink**, and **NanoMelt**—enabling rapid batch analysis of antibody sequences without requiring local model installations or GPU hardware.
+The **Sormanni Sequencing Platform** is an interactive Streamlit-based web interface that streamlines antibody sequencing workflows for researchers and scientists. This platform provides seamless access to specialized ML-powered endpoints—**AbNatiV**, **NbForge**, **NbFrame**, and **NanoMelt**—enabling rapid batch analysis of antibody sequences without requiring local model installations or GPU hardware.
 
 ### Key Features
 
-- 🧬 **Multi-Model Analysis**: Unified interface for AbNatiV (nativeness scoring), NanoKink (kink prediction), and NanoMelt (thermal stability estimation)
+- 🧬 **Multi-Model Analysis**: Unified interface for AbNatiV (nativeness scoring), NbForge (structure prediction), NbFrame (CDR3 conformation classification), and NanoMelt (thermal stability estimation)
 - 📊 **Batch Processing**: Upload CSV files containing multiple sequences and process them efficiently
 - 📈 **Interactive Results**: Sortable tables with detailed metrics and per-residue analysis
 - 💾 **Data Export**: Download comprehensive results as CSV for further analysis
@@ -33,7 +33,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-AbNatiV, NanoKink, and NanoMelt requests go through the lightweight `services/*_client.py` HTTP helpers and return results directly to the Sequencing page. The app requires `SEQUENCE_LIBRARIES_URL` so it knows which managed deployment to contact—grab the value from Cloud Run (or ask the platform team). Values placed in `.env` are loaded automatically via `python-dotenv`, so once you edit `.env` you no longer need to export anything manually.
+AbNatiV, NbForge, NbFrame, and NanoMelt requests go through the lightweight `services/*_client.py` HTTP helpers and return results directly to the Sequencing page. The app requires `SEQUENCE_LIBRARIES_URL` so it knows which managed deployment to contact—grab the value from Cloud Run (or ask the platform team). Values placed in `.env` are loaded automatically via `python-dotenv`, so once you edit `.env` you no longer need to export anything manually.
 
 ---
 
@@ -43,7 +43,8 @@ AbNatiV, NanoKink, and NanoMelt requests go through the lightweight `services/*_
 | ----------- | ----------------------------------------------------------------------------------------- |
 | `/`         | Health probe returning basic service metadata.                                            |
 | `/abnativ`  | Scores VH/VL/VHH sequences and returns nativeness values plus optional residue summaries. |
-| `/nanokink` | Predicts kink probabilities + optional alignment metadata for nanobodies.                 |
+| `/nbforge`  | Runs nanobody sequence-to-structure inference with optional minimization and NbFrame scoring. |
+| `/nbframe`  | Classifies CDR3 conformation as kinked/extended/uncertain from sequence or structure inputs. |
 | `/nanomelt` | Estimates apparent melting temperatures for VHH nanobodies.                               |
 
 Each endpoint expects JSON containing the sequence(s) plus optional knobs such as `nativeness_type` or `do_alignment`. AbNatiV currently accepts one sequence per request, so the client submits each entry sequentially:

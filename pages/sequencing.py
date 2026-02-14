@@ -14,14 +14,16 @@ except ImportError:  # pragma: no cover - pandas should be part of Streamlit sta
 import streamlit as st
 
 from services.abnativ_client import run_abnativ
-from services.nanokink_client import run_nanokink_batch
+from services.nbforge_client import run_nbforge_batch
+from services.nbframe_client import run_nbframe_batch
 from services.nanomelt_client import run_nanomelt_batch
 
 
 MODEL_ABNATIV = "AbNatiV"
-MODEL_NANOKINK = "NanoKink"
+MODEL_NBFORGE = "NbForge"
+MODEL_NBFRAME = "NbFrame"
 MODEL_NANOMELT = "NanoMelt"
-MODEL_OPTIONS = [MODEL_ABNATIV, MODEL_NANOKINK, MODEL_NANOMELT]
+MODEL_OPTIONS = [MODEL_ABNATIV, MODEL_NBFORGE, MODEL_NBFRAME, MODEL_NANOMELT]
 
 
 RESULT_DF_KEY = "sequencing_results_df"
@@ -107,6 +109,12 @@ def _next_download_key() -> str:
     return f"download_csv_{current}"
 
 
+def _store_results(results_df, csv_value: str, csv_filename: str) -> None:
+    st.session_state[RESULT_DF_KEY] = results_df
+    st.session_state[RESULT_CSV_KEY] = csv_value
+    st.session_state[RESULT_FILENAME_KEY] = csv_filename
+
+
 def render():
     """Render the sequencing page."""
     st.header("Sequencing")
@@ -134,6 +142,44 @@ def render():
         )
 
         model_selection = st.radio("Select Model", options=MODEL_OPTIONS, index=0)
+
+        nbforge_use_gpu = False
+        nbforge_gpu_device = ""
+        nbforge_minimize = True
+        nbforge_with_nbframe = False
+        nbframe_kinked_threshold = 0.70
+        nbframe_extended_threshold = 0.40
+
+        if model_selection == MODEL_NBFORGE:
+            st.caption("NbForge options")
+            nbforge_use_gpu = st.checkbox("Use GPU", value=False)
+            if nbforge_use_gpu:
+                nbforge_gpu_device = st.text_input(
+                    "GPU device",
+                    value="0",
+                    help="GPU index (e.g. 0) or torch device string (e.g. cuda:0).",
+                ).strip()
+            nbforge_minimize = st.checkbox("Run OpenMM minimization", value=True)
+            nbforge_with_nbframe = st.checkbox(
+                "Include NbFrame scores in NbForge output", value=False
+            )
+
+        if model_selection == MODEL_NBFRAME:
+            st.caption("NbFrame options (sequence classifier)")
+            nbframe_kinked_threshold = st.slider(
+                "Kinked threshold",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.70,
+                step=0.01,
+            )
+            nbframe_extended_threshold = st.slider(
+                "Extended threshold",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.40,
+                step=0.01,
+            )
 
         run_button = st.button("Run", type="primary", use_container_width=True)
 
@@ -212,10 +258,7 @@ def render():
         csv_value = csv_buffer.getvalue()
         csv_filename = "abnativ_results.csv"
 
-        st.session_state[RESULT_DF_KEY] = results_df
-        st.session_state[RESULT_CSV_KEY] = csv_value
-        st.session_state[RESULT_FILENAME_KEY] = csv_filename
-
+        _store_results(results_df, csv_value, csv_filename)
         _render_output(results_df, csv_value, csv_filename)
 
         st.success(f"Processed {len(successes)} sequence(s) via AbNatiV API.")
@@ -224,14 +267,20 @@ def render():
             st.code("\n".join(failures))
         return
 
-    if model_selection == MODEL_NANOKINK:
-        with st.spinner("Calling NanoKink API..."):
-            results_df, failures = run_nanokink_batch(sequences)
+    if model_selection == MODEL_NBFORGE:
+        with st.spinner("Calling NbForge API..."):
+            results_df, failures = run_nbforge_batch(
+                sequences,
+                use_gpu=nbforge_use_gpu,
+                gpu_device=nbforge_gpu_device,
+                minimize=nbforge_minimize,
+                include_nbframe=nbforge_with_nbframe,
+            )
 
         if results_df is None or results_df.empty:
             _reset_results_state()
             _render_output(None, None, None)
-            st.error("NanoKink processing failed for all sequences.")
+            st.error("NbForge processing failed for all sequences.")
             if failures:
                 st.caption("Failure details")
                 st.code("\n".join(failures))
@@ -240,15 +289,43 @@ def render():
         csv_buffer = io.StringIO()
         results_df.to_csv(csv_buffer, index=False)
         csv_value = csv_buffer.getvalue()
-        csv_filename = "nanokink_results.csv"
+        csv_filename = "nbforge_results.csv"
 
-        st.session_state[RESULT_DF_KEY] = results_df
-        st.session_state[RESULT_CSV_KEY] = csv_value
-        st.session_state[RESULT_FILENAME_KEY] = csv_filename
-
+        _store_results(results_df, csv_value, csv_filename)
         _render_output(results_df, csv_value, csv_filename)
 
-        st.success(f"Processed {len(results_df)} sequence(s) via NanoKink API.")
+        st.success(f"Processed {len(results_df)} sequence(s) via NbForge API.")
+        if failures:
+            st.warning("Some sequences failed")
+            st.code("\n".join(failures))
+        return
+
+    if model_selection == MODEL_NBFRAME:
+        with st.spinner("Calling NbFrame API..."):
+            results_df, failures = run_nbframe_batch(
+                sequences,
+                kinked_threshold=nbframe_kinked_threshold,
+                extended_threshold=nbframe_extended_threshold,
+            )
+
+        if results_df is None or results_df.empty:
+            _reset_results_state()
+            _render_output(None, None, None)
+            st.error("NbFrame processing failed for all sequences.")
+            if failures:
+                st.caption("Failure details")
+                st.code("\n".join(failures))
+            return
+
+        csv_buffer = io.StringIO()
+        results_df.to_csv(csv_buffer, index=False)
+        csv_value = csv_buffer.getvalue()
+        csv_filename = "nbframe_results.csv"
+
+        _store_results(results_df, csv_value, csv_filename)
+        _render_output(results_df, csv_value, csv_filename)
+
+        st.success(f"Processed {len(results_df)} sequence(s) via NbFrame API.")
         if failures:
             st.warning("Some sequences failed")
             st.code("\n".join(failures))
@@ -271,10 +348,7 @@ def render():
     csv_value = csv_buffer.getvalue()
     csv_filename = "nanomelt_results.csv"
 
-    st.session_state[RESULT_DF_KEY] = results_df
-    st.session_state[RESULT_CSV_KEY] = csv_value
-    st.session_state[RESULT_FILENAME_KEY] = csv_filename
-
+    _store_results(results_df, csv_value, csv_filename)
     _render_output(results_df, csv_value, csv_filename)
 
     st.success(f"Processed {len(results_df)} sequence(s) via NanoMelt API.")
